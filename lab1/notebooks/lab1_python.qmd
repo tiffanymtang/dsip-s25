@@ -1,0 +1,66 @@
+---
+title: "Lab 1 - Redwood Trees"
+author: "Insert Name Here"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show Code"
+    code-tools: true
+    theme: sandstone
+    # theme: cerulean
+jupyter: python3
+toc: true
+execute: 
+  warning: false
+  message: false
+---
+
+```{python setup}
+import sys
+sys.path.append("..")
+
+from os.path import join as oj
+from python_solutions.load import load_dates_data, load_mote_location_data, load_redwood_data
+from python_solutions.clean import clean_dates_data, clean_mote_location_data, clean_redwood_data
+
+DATA_PATH = oj("..", "data")
+```
+
+<!-- :::{.panel-tabset .nav-pills} -->
+:::{.panel-tabset}
+
+# Introduction
+
+# Data Overview and Collection
+
+```{python load-data}
+# load dates data
+dates_orig = load_dates_data(DATA_PATH)
+
+# load motes data
+motes_orig = load_mote_location_data(DATA_PATH)
+
+# load redwood data
+redwood_all_orig = load_redwood_data(DATA_PATH, source="all")
+redwood_net_orig = load_redwood_data(DATA_PATH, source="net")
+redwood_log_orig = load_redwood_data(DATA_PATH, source="log")
+```
+
+# Data Cleaning
+
+```{python clean-data}
+# load dates data
+dates_df = clean_dates_data(dates_orig)
+
+# load motes data
+motes_df = clean_mote_location_data(motes_orig)
+
+# load redwood data
+redwood_all_df = clean_redwood_data(redwood_all_orig)
+redwood_net_df = clean_redwood_data(redwood_net_orig)
+redwood_log_df = clean_redwood_data(redwood_log_orig)
+```
+
+# Exploratory Data Analysis
+
+:::

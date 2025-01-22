@@ -1,0 +1,59 @@
+---
+title: "Lab 1 - Redwood Trees"
+author: "Insert Name Here"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show Code"
+    code-tools: true
+    theme: sandstone
+    # theme: yeti
+toc: true
+execute: 
+  warning: false
+  message: false
+---
+
+```{r setup, include=FALSE}
+# source all functions from R/ folder
+for (fname in list.files(here::here("R"), pattern = "*.R")) {
+  source(here::here(file.path("R", fname)))
+}
+
+# path to data
+DATA_PATH <- here::here("data")
+```
+
+# Introduction
+
+# Data Overview and Collection
+
+```{r load-data}
+# load dates data
+dates_orig <- load_dates_data(DATA_PATH)
+
+# load motes data
+motes_orig <- load_mote_location_data(DATA_PATH)
+
+# load redwood data
+redwood_all_orig <- load_redwood_data(DATA_PATH, source = "all")
+redwood_net_orig <- load_redwood_data(DATA_PATH, source = "net")
+redwood_log_orig <- load_redwood_data(DATA_PATH, source = "log")
+```
+
+# Data Cleaning
+
+```{r clean-data}
+# load dates data
+dates_df <- clean_dates_data(dates_orig)
+
+# load motes data
+motes_df <- clean_mote_location_data(motes_orig)
+
+# load redwood data
+redwood_all_df <- clean_redwood_data(redwood_all_orig)
+redwood_net_df <- clean_redwood_data(redwood_net_orig)
+redwood_log_df <- clean_redwood_data(redwood_log_orig)
+```
+
+# Exploratory Data Analysis
