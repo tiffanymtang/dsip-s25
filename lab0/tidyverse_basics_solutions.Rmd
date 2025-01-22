@@ -1,0 +1,967 @@
+---
+title: "Introduction to Tidyverse"
+author: ""
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+# set global knitr options
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  cache = FALSE)
+
+# load in libraries
+# if any packages are not installed, install via `install.packages("xxx")`
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(tibble)
+library(stringr)
+library(forcats)
+library(tidyselect)
+# library(magrittr) # uncomment if you want to use the `|>` pipe
+
+# set seed
+set.seed(1)
+```
+
+# What is tidyverse?
+
+In this notebook, we will walk through the basics of the [**tidyverse**](https://www.tidyverse.org/), a collection of R packages designed for data science. While it is possible to use base R functions to manipulate, analyze, and plot data, the tidyverse provides a more intuitive, consistent syntax for these tasks. This can often lead to more readable, user-friendly, and maintainable code.
+
+The core packages in the tidyverse include `ggplot2`, `dplyr`, `tidyr`, `readr`, `purrr`, `tibble`, `stringr`, and `forcats`. A brief overview of each package is provided below:
+
+-   [`ggplot2`](https://ggplot2.tidyverse.org/): for plotting ([html cheat sheet](https://rstudio.github.io/cheatsheets/html/data-visualization.html), [pdf cheat sheet](https://rstudio.github.io/cheatsheets/data-visualization.pdf))
+-   [`dplyr`](https://dplyr.tidyverse.org/): for manipulating data ([html cheat sheet](https://rstudio.github.io/cheatsheets/html/data-transformation.html), [pdf cheat sheet](https://rstudio.github.io/cheatsheets/data-transformation.pdf))
+-   [`tidyr`](https://tidyr.tidyverse.org/): for tidying data ([html cheat sheet](https://rstudio.github.io/cheatsheets/html/tidyr.html), [pdf cheat sheet](https://rstudio.github.io/cheatsheets/tidyr.pdf))
+-   [`readr`](https://readr.tidyverse.org/): for reading data into R ([html cheat sheet](https://rstudio.github.io/cheatsheets/html/data-import.html), [pdf cheat sheet](https://rstudio.github.io/cheatsheets/data-import.pdf))
+-   [`purrr`](https://purrr.tidyverse.org/): for functional programming ([html cheat sheet](https://rstudio.github.io/cheatsheets/html/purrr.html), [pdf cheat sheet](https://rstudio.github.io/cheatsheets/purrr.pdf))
+-   [`tibble`](https://tibble.tidyverse.org/): for creating and working with tibbles
+-   [`stringr`](https://stringr.tidyverse.org/): for working with character strings ([html cheat sheet](https://rstudio.github.io/cheatsheets/html/strings.html), [pdf cheat sheet](https://rstudio.github.io/cheatsheets/strings.pdf))
+-   [`forcats`](https://forcats.tidyverse.org/): for working with factors ([html cheat sheet](https://rstudio.github.io/cheatsheets/html/factors.html), [pdf cheat sheet](https://rstudio.github.io/cheatsheets/factors.pdf))
+
+We will go through a few of the above packages in more detail (i.e., `tibble`, `dplyr`, `tidyr`, `ggplot2`, and `purrr`) and highlight the most useful functions from each next. But before jumping in, we first need to discuss the concept of "piping".
+
+# Piping
+
+At a high-level, piping is a way to chain functions together. It allows you to pass the output of one function as the input to the next function, reducing the need for defining intermediate variables or writing deeply nested function calls.
+
+Before R v4.1, one had to install and load in the `magrittr` package to use the pipe operator `|>`. However, with the release of R v4.1, there is now a *native* pipe operator `|>` that can be used in place of `|>`. For the majority of situations and for all cases in this notebook, `|>` and `|>` are interchangeable. However, there are some differences; if you are interested in reading more, check out this [blog post](https://www.tidyverse.org/blog/2023/04/base-vs-magrittr-pipe/).
+
+*My opinionated take*: I generally prefer using the native pipe operator `|>` because I don't want to have to load in the `magrittr` package. Consequently, I recommend updating your R version to 4.1 or later (if you haven't already) to use the native pipe operator, but again, `|>` and `|>` are pretty much interchangeable, so feel free to use whichever you prefer.
+
+**How piping works:** The pipe operator takes the result of the expression on its left-hand side and "pipes" it into the *first* argument of the function on its right-hand side. Below, we give examples of piping and their equivalent base R code.
+
+```{r piping-1}
+x <- rnorm(1000)
+# computes the mean of x using piping
+x |> mean()
+# this is equivalent to
+mean(x)
+```
+
+```{r piping-2}
+f <- function(a, b) {
+  a + b
+}
+# computes the mean of (x + 1) using piping
+x |> f(b = 1) |> mean()
+# this is equivalent to
+mean(f(x, b = 1))
+```
+
+**Exercise 1.** Rewrite the following code chunk using the pipe operator.
+
+```{r piping-ex1}
+# outputs summary statistics of the iris dataset
+summary(iris)
+
+# rewrite using pipe operator
+iris |> summary()
+```
+
+**Exercise 2.** Rewrite the following code chunk using the pipe operator.
+
+```{r piping-ex2}
+log_petal_length <- log(iris$Sepal.Length)
+min(log_petal_length)
+
+# rewrite using pipe operator
+iris$Sepal.Length |> log() |> min()
+```
+
+**Exercise 3.** Without actually running the following code chunk in your R console, what is the output of the following code?
+
+```{r piping-ex3, eval = FALSE}
+f <- function(x, y = 0) {
+  x + y + 1
+}
+g <- function(x, y = 1) {
+  x * y * 2
+}
+# what do you think the output of this code is?
+4 |> f() |> g(2)
+#> 20
+```
+
+# tibble
+
+First up in the tidyverse is the [`tibble`](https://tibble.tidyverse.org/) package. Tibbles are a modern reimagining of the data frame, keeping what time has proven to be effective, and throwing out what is not. Tibbles are data frames, but they tweak some older behaviors to make life a little easier. They also complain more, forcing you to confront possible problems earlier. For example, tibbles do not convert strings to factors by default, and they do not use row names. For the most part, you can use tibbles and data frames interchangeably. I will often go back and forth between these two, depending on which is easier.
+
+One additional advantage of tibbles is that they have an enhanced `print()` method, which makes it easier to quickly view the data. For this reason alone, let's convert the `iris` data frame into a tibble.
+
+```{r tibble}
+# convert iris data frame to tibble
+iris <- as_tibble(iris)
+iris
+```
+
+# dplyr
+
+[`dplyr`](https://dplyr.tidyverse.org/) is a package for data manipulation and provides a set of functions that can be used to filter rows, select columns, mutate new columns, group data, and more. This is probably the package you will use most for tasks like data preprocessing and cleaning. We will cover some of the main functions from `dplyr` here, but if you ever need a `dplyr` cheat sheet, check these out: [html cheat sheet](https://rstudio.github.io/cheatsheets/html/data-transformation.html), [pdf cheat sheet](https://rstudio.github.io/cheatsheets/data-transformation.pdf).
+
+Main `dplyr` functions:
+
+-   `filter()`: keep rows that match a condition
+-   `select()`: keep or drop columns
+-   `pull()`: extract a single column as a vector
+-   `mutate()`: create or modify (i.e., mutate) columns
+-   `group_by()`: group data by one or more variables (often used with `summarize()`)
+-   `summarize()`: summarize data by collapsing each group into a single row (e.g., compute mean, median, etc.)
+-   `arrange()`: order/sort rows by column values
+-   `distinct()`: remove duplicate rows
+-   `bind_cols()`, `bind_rows()`: combine data frames by columns or rows
+-   `left_join()`, `right_join()`, `inner_join()`, `full_join()`: merge two data frames by a common column(s)
+
+We will give a few examples of how to use each of these functions below.
+
+## filter
+
+`filter()` finds rows where the specified condition is true and returns those rows as a data frame. Here, we use `filter()` to get only the rows in the `iris` data frame that are from the versicolor species.
+
+```{r filter-1}
+# using filter() without piping
+filter(iris, Species == "versicolor")
+
+# same thing but using piping instead
+iris |> 
+  filter(Species == "versicolor")
+
+# this is equivalent to the following code in base R
+iris[iris$Species == "versicolor", ]
+```
+
+Instead of just filtering out one species, we could look at a more complex filters:
+
+```{r filter-2}
+# get all rows where the species is either versicolor or setosa
+iris |> 
+  filter(Species %in% c("versicolor", "setosa"))
+
+# this is equivalent to the following code in base R
+iris[iris$Species %in% c("versicolor", "setosa"), ]
+```
+
+```{r filter-3}
+# get all rows where the species is either versicolor or setosa AND
+# where the sepal width is greater than 3
+iris |> 
+  filter(
+    Species %in% c("versicolor", "setosa"),
+    Sepal.Width > 3
+  )
+
+# this is equivalent to the following code in base R
+iris[(iris$Species %in% c("versicolor", "setosa")) & (iris$Sepal.Width > 3), ]
+```
+
+```{r filter-4}
+# get all rows where the species is either versicolor or setosa OR
+# where the sepal width is greater than the median sepal width
+iris |> 
+  filter(
+    Species %in% c("versicolor", "setosa") | 
+      Sepal.Width > median(Sepal.Width)
+  )
+
+# this is equivalent to the following code in base R
+iris[(iris$Species %in% c("versicolor", "setosa")) | (iris$Sepal.Width > median(iris$Sepal.Width)), ]
+```
+
+**Exercise 4.** How many observations have sepal length in the upper 50% quantile and petal width greater than 2?
+
+```{r filter-ex4}
+iris |>
+  filter(
+    Sepal.Length > median(Sepal.Length),
+    Petal.Width > 2
+  ) |>
+  nrow()
+```
+
+## select
+
+While `filter()` is used to filter *rows*, `select()` is used to keep or remove *columns*. Below, we use `select()` to keep only the species and sepal length columns, after filtering to only the versicolor species samples/rows.
+
+```{r select-1}
+iris |> 
+  filter(Species == "versicolor") |> 
+  select(Sepal.Length, Species)
+
+# this is equivalent to the following code in base R
+iris[iris$Species == "versicolor", c("Sepal.Length", "Species")]
+```
+
+We can also remove columns with `select()` by using the `-` sign. Below, we remove the sepal length column.
+
+```{r select-2}
+iris |> 
+  select(-Sepal.Length)
+
+# this is equivalent to the following code in base R
+iris[, -which(names(iris) == "Sepal.Length")]
+```
+
+It is even possible to rename columns while "selecting". Below, we rename the sepal length and sepal width columns to "Length" and "Width", respectively.
+
+```{r select-3}
+iris |>
+  select(
+    Length = Sepal.Length, 
+    Width = Sepal.Width
+  )
+
+# this is equivalent to the following code in base R
+iris_equiv <- iris[, c("Sepal.Length", "Sepal.Width")]
+names(iris_equiv) <- c("Length", "Width")
+iris_equiv
+```
+
+Note that because this renaming is happening inside `select()`, then columns that aren't selected are dropped. If you want to rename columns while keeping all columns in the data, you should use `rename` instead of `select`. Below, we rename the sepal length and sepal width columns while keeping the non-renamed columns.
+
+```{r select-4}
+iris |>
+  rename(
+    Length = Sepal.Length, 
+    Width = Sepal.Width
+  )
+
+# this is equivalent to the following code in base R
+iris_equiv <- iris # creating copy of iris to avoid overwriting original (for demonstration purposes)
+names(iris_equiv)[names(iris_equiv) == "Sepal.Length"] <- "Length"
+names(iris_equiv)[names(iris_equiv) == "Sepal.Width"] <- "Width"
+iris_equiv
+```
+
+One of the most useful ways to use `select()` is in conjuction with the `select_helpers` from the `tidyselect` R package (see `? tidyselect::select_helpers`). These `select_helpers` allow you to select multiple columns that meet a certain criteria. For example, we can use `contains("Length")` to select all columns that contain the word "Length".
+
+```{r select-5}
+iris |> 
+  select(contains("Length"))
+```
+
+**Exercise 5.** If you wanted to extract all columns in the data frame below that *started* with the letter "X" in the column name, how would you go about doing this without explicitly typing the names of each individual column that you want? (Hint: The help page for `tidyselect::select_helpers` may be useful.)
+
+```{r select-ex5}
+# create fake dataset (please run lines)
+idx <- sample(1:100, 25)  # generate random indices
+col_names <- sample(
+  c(paste0("X", idx), paste0(idx, "X")),  # generate column names
+  size = 50,
+  replace = FALSE
+)
+data <- matrix(rnorm(500), nrow = 10, ncol = 50) |>
+  as_tibble() |> 
+  setNames(col_names)
+data
+
+# extract columns that start with "X" in column name
+data |>
+  select(starts_with("X"))
+```
+
+**Exercise 6.** Extract the Sepal.Length column of the `iris` dataset using `select()`. Next, extract the Sepal.Length column of the `iris` dataset using `pull()`. What is the difference between `select()` and `pull()`?
+
+```{r select-ex6}
+# using select
+iris |> 
+  select(Sepal.Length)
+
+# using pull
+iris |>
+  pull(Sepal.Length)
+
+# The difference is that select() always returns a data frame or tibble while pull() returns a vector. Since many functions in R require you to input arguments with a specific type, be aware of the object types that you are working with. Otherwise, R may cry and throw an obscure error.
+```
+
+## mutate
+
+To either modify the values of existing columns or create entirely new columns, we can use the `mutate()` function. Below, we modify the existing `Species` column, which is currently a factor, into a character column.
+
+```{r mutate-1}
+iris |> 
+  mutate(Species = as.character(Species))
+
+# this is equivalent to the following code in base R
+iris_equiv <- iris # creating copy of iris to avoid overwriting original
+iris_equiv$Species <- as.character(iris_equiv$Species)
+iris_equiv
+```
+
+We can also create a new column called `Sepal.Sum` that is the sum of each flower's sepal length and sepal width.
+
+```{r mutate-2}
+iris |> 
+  mutate(
+    Species = as.character(Species),
+    Sepal.Sum = Sepal.Length + Sepal.Width
+  )
+
+# this is equivalent to the following code in base R
+iris_equiv <- iris
+iris_equiv$Species <- as.character(iris_equiv$Species)
+iris_equiv$Sepal.Sum <- iris_equiv$Sepal.Width + iris_equiv$Sepal.Length
+iris_equiv
+```
+
+To apply the same function across multiple columns, we can combine `mutate()` with `across()` like follows:
+
+```{r mutate-3}
+# multiply Sepal.Length and Sepal.Width values by 2
+iris |> 
+  mutate(
+    across(
+      c(Sepal.Length, Sepal.Width),
+      function(x) 2 * x
+    )
+  )
+
+# can also use across with select_helpers
+iris |> 
+  mutate(
+    across(
+      starts_with("Sepal"),
+      function(x) 2 * x
+    )
+  )
+
+# this is equivalent to the following code in base R
+iris_equiv <- iris
+iris_equiv$Sepal.Length <- 2 * iris_equiv$Sepal.Length
+iris_equiv$Sepal.Width <- 2 * iris_equiv$Sepal.Width
+iris_equiv
+```
+
+**Exercise 7.** Create a new column in iris called `Sepal.Area` that is the product of sepal length and sepal width.
+
+```{r mutate-ex7}
+iris |>
+  mutate(Sepal.Area = Sepal.Length * Sepal.Width)
+```
+
+**Exercise 8.** Using the `iris_new` dataset, convert all character columns into factors using `mutate()` and `across()`. Hint: `tidyselect::where()` might be helpful.
+
+```{r mutate-ex8}
+# create iris_new dataset
+iris_new <- iris |>
+  mutate(
+    Species = as.character(Species),
+    another_character_col = sample(letters, nrow(iris), replace = TRUE)
+  )
+iris_new
+
+# convert character columns to factors
+iris_new |>
+  mutate(
+    across(
+      where(is.character),
+      function(x) as.factor(x)
+    )
+  )
+```
+
+## group_by and summarize
+
+`group_by()` is a function that changes operations from operating on the entire dataset to operating on it group-by-group. What does this even mean? This is best illustrated with an example.
+
+In the example below, we convert the `Sepal.Length` values into their respective ranks (i.e., 1 = smallest `Sepal.Length`, 2 = second smallest `Sepal.Length`, etc.).
+
+```{r group_by-1}
+iris |> 
+  mutate(Sepal.Length.rank = rank(Sepal.Length)) |> 
+  # sort by Sepal.Length.rank (from smallest to largest)
+  arrange(Sepal.Length.rank) |> 
+  # select subset of columns for easier viewing
+  select(Sepal.Length, Sepal.Length.rank, Species) 
+```
+
+If I had first *grouped* the data by `Species` and then computed the ranks like below, the rankings are actually computed per group/species. That is, 1 = the smallest Sepal.Length within the setosa (or versicolor or virginica) species, 2 = the second smallest Sepal.Length within the setosa (or versicolor or virginica) species, etc.
+
+```{r group_by-2}
+iris |> 
+  group_by(Species) |> 
+  mutate(Sepal.Length.rank = rank(Sepal.Length)) |> 
+  # sort first by Sepal.Length.rank and then by Species when there are tied Sepal.length.rank
+  arrange(Sepal.Length.rank, Species) |> 
+  # select subset of columns for easier viewing
+  select(Sepal.Length, Sepal.Length.rank, Species)
+```
+
+If I no longer need the groupings, I can use `ungroup()` to remove the grouping.
+
+```{r group_by-3}
+iris |> 
+  group_by(Species) |> 
+  # get the rank of Sepal.Length within each species
+  mutate(Sepal.Length.rank.per.species = rank(Sepal.Length)) |> 
+  # remove species grouping
+  ungroup() |>
+  # get the rank of Sepal.Length across all species
+  mutate(Sepal.Length.rank = rank(Sepal.Length)) |>
+  # sort first by Sepal.Length.rank.per.species, Sepal.Length.rank, then by Species 
+  arrange(Sepal.Length.rank.per.species, Sepal.Length.rank, Species) |> 
+  # select subset of columns for easier viewing
+  select(Sepal.Length, Sepal.Length.rank.per.species, Sepal.Length.rank, Species)
+```
+
+`group_by` is very powerful when used in conjunction with `summarize()` (or `summarise()` if you're British/Australian). At its core, `summarize()` collapses (or "summarizes") each group into a single row. In the example below, we group the `iris` dataset by `Species` and compute the mean and median sepal length for each species.
+
+```{r group_by-4}
+iris |> 
+  group_by(Species) |>  
+  summarize(
+    Sepal.Length.mean = mean(Sepal.Length),
+    Sepal.Length.median = median(Sepal.Length)
+  )
+```
+
+Note that `summarize()` can also be used without `group_by()` to get summary statistics for the entire dataset:
+
+```{r summarize-1}
+iris |> 
+  summarize(
+    Sepal.Length.mean = mean(Sepal.Length),
+    Sepal.Length.median = median(Sepal.Length)
+  )
+```
+
+To figure out whether you want to be using `mutate()` or `summarize()` for some task, just remember that `mutate()` will output the same number of rows as the input while `summarize()` collapse the rows into a single row (per group).
+
+**Exercise 9.** Without running the following code chunk, can you tell how many rows are in the resulting `iris_summarized` and `iris_mutated` datasets?
+
+```{r summarize-ex9, eval = FALSE}
+iris_summarized <- iris |>
+  summarize(Sepal.Length.min = min(Sepal.Length))
+#> 1 row
+
+iris_mutated <- iris |> 
+  mutate(Sepal.Length.min = min(Sepal.Length))
+#> same number of rows as iris, i.e., 150 rows
+```
+
+**Exercise 10.** For each species, compute the standard deviation of sepal length.
+
+```{r group_by-ex10}
+iris |>
+  group_by(Species) |>
+  summarize(Sepal.Length.sd = sd(Sepal.Length))
+```
+
+**Exercise 11.** Compute the number of observations for each species in the `iris` dataset. Try doing this using `group_by()`, `summarize()`, and `dplyr::n()` (see `? dplyr::n()` to read more about this function).
+
+```{r group_by-ex11}
+iris |>
+  group_by(Species) |>
+  summarize(n = n())
+```
+
+**Exercise 12.** It is also possible to use `across()` within `summarize()` like we did with `mutate()`. Try using `group_by()`, `summarize()`, and `across()` to compute the mean and median Sepal.Length, Sepal.Width, Petal.Length, and Petal.Width per species in the `iris` dataset.
+
+```{r group_by-ex12}
+iris |>
+  group_by(Species) |>
+  summarize(
+    across(
+      everything(),
+      list(mean = mean, median = median)
+    )
+  )
+
+```
+
+## arrange
+
+We have already briefly seen the `arrange()` function before. But more formally, `arrange()` is a function for ordering rows in a data.frame (or tibble) based upon some expression involving its variables/columns. By default, `arrange()` orders the rows based upon increasing order of the specified column (in the example, by sepal length).
+
+```{r arrange-1}
+iris |>
+  arrange(Sepal.Length)
+```
+
+We can also arrange by multiple columns and by decreasing order of column(s). In the example below, we order the rows first by decreasing sepal length and then by increasing sepal width (if there are ties among sepal length).
+
+```{r arrange-2}
+iris |>
+  arrange(desc(Sepal.Length), Sepal.Width)
+```
+
+**Exercise 13.** Please sort the `iris` dataset first by species (in alphabetical order), then by decreasing petal width.
+
+```{r arrange-ex13}
+iris |>
+  arrange(Species, desc(Petal.Width))
+```
+
+**Exercise 14.** For each species, get the 10 observations/rows with the largest sepal length. Then, sort the resulting dataset by decreasing sepal length. Hint: take a look at `? dplyr::slice_max`.
+
+```{r ex-arrange}
+iris |>
+  group_by(Species) |>
+  top_n(n = 10, wt = Sepal.Length) |>
+  ungroup() |>
+  arrange(desc(Sepal.Length))
+```
+
+## bind
+
+`dplyr` also has very convenient functions to combine data frames by columns or rows. The `bind_cols()` function is used to combine data frames by columns, while the `bind_rows()` function is used to combine data frames by rows. Below, we demonstrate how to use these functions.
+
+```{r bind_cols-1}
+df1 <- tibble(uppercase = LETTERS[1:3])
+df2 <- tibble(lowercase = letters[1:3])
+# combine data frames by columns
+bind_cols(df1, df2)
+
+# this is equivalent to the following code in base R
+cbind(df1, df2)
+```
+
+```{r bind_rows-1}
+df1 <- tibble(a = 1:3, b = 2:4, c = 3:5)
+df2 <- tibble(a = 4:6, b = 5:7, c = 6:8)
+# combine data frames by columns
+bind_rows(df1, df2)
+
+# this is equivalent to the following code in base R
+rbind(df1, df2)
+```
+
+**Exercise 15.** Try running the following code chunk. What is the difference between using `bind_rows()` and `rbind()`?
+
+```{r bind_cols-ex15, eval = FALSE}
+df1 <- tibble(a = 1:3, c = 3:5)
+df2 <- tibble(b = 5:8, a = 4:7)
+df3 <- tibble(b = 9:10, c = 6:7)
+
+bind_rows(df1, df2, df3)
+rbind(df1, df2, df3)
+
+#> rbind cannot handle data frames with different column names, so it will throw an error. bind_rows can handle data frames with different column names, and will fill in the missing values with NA.
+```
+
+**Exercise 16.** Concatenate the `df1` and `df2` data frames by columns. Do this using both `bind_cols()` and `cbind()`. What is the difference between these two methods?
+
+```{r bind_cols-ex16}
+df1 <- tibble(letter = LETTERS[1:3])
+df2 <- tibble(letter = letters[1:3])
+# combine data frames by columns
+bind_cols(df1, df2)
+cbind(df1, df2)
+
+#> bind_cols will automatically rename columns if they have the same name, while cbind will keep the column names the same
+```
+
+## join
+
+Rather than simply concatenating datasets by rows or columns, we often want to merge datasets based upon common IDs (or column(s)). This data manipulation is often called "joining" two datasets, and there are different types of "joins":
+
+-   `inner_join()`: keep only rows that have matching IDs in both datasets
+-   `full_join()`: keep all rows from both datasets (don't need to have matching IDs)
+-   `left_join()`: keep all rows from the first (i.e., left) dataset and only matching rows from the second dataset
+-   `right_join()`: keep all rows from the second (i.e., right) dataset and only matching rows from the first dataset
+
+![](https://data-lessons.github.io/gapminder-R/fig/dplyr-joins.png)
+
+To illustrate the differences between these joins, let's try joining the following two datasets: `band_members` and `band_instruments`. Both datasets have column named `name` which we will use as the "ID" to join the datasets.
+
+```{r join-1}
+band_members
+```
+
+```{r join-2}
+band_instruments
+```
+
+```{r join-3}
+# inner join: keeps people who are in both datasets
+inner_join(band_members, band_instruments, by = "name")
+# full join: keeps all people from both datasets
+full_join(band_members, band_instruments, by = "name")
+# left join: keeps all people in the left (band_members) dataset
+left_join(band_members, band_instruments, by = "name")
+# right join: keeps all people in the right (band_instruments) dataset
+right_join(band_members, band_instruments, by = "name")
+```
+
+If the "ID" column(s) have different names in the two datasets, you can specify the columns to join on using the `by` argument. Below, we join the `champs` and `win_percent` datasets ([data source](https://en.wikipedia.org/wiki/List_of_Notre_Dame_Fighting_Irish_head_football_coaches)) by simultaneously matching the `"first_name"` column in the `champs` dataset to the `"first"` column in the `win_percent` dataset and the `"last_name"` column in the `champs` dataset to the `"last"` column in the `win_percent` dataset.
+
+```{r join-4}
+champs <- tibble(
+  first_name = c("Knute", "Frank", "Ara", "Dan", "Lou", "Marcus"),
+  last_name = c("Rockne", "Leahy", "Parseghian", "Devine", "Holtz", "Freeman"),
+  n_championships = c("3", "4", "2", "1", "1", "1?")
+)
+
+win_percent <- tibble(
+  first = c("Knute", "Frank", "Ara", "Dan", "Lou", "Marcus"),
+  last = c("Rockne", "Leahy", "Parseghian", "Devine", "Holtz", "Freeman"),
+  win_percent = c(0.881, 0.855, 0.836, 0.764, 0.765, 0.786)
+)
+
+inner_join(
+  x = champs, y = win_percent, 
+  by = c("first_name" = "first", "last_name" = "last")
+)
+```
+
+**Exercise 17.** Merge the `band_members` and `band_instruments2` datasets such that all band members in the `band_members` dataset are kept.
+
+```{r join-ex17}
+band_members
+band_instruments2
+left_join(band_members, band_instruments2, by = c("name" = "artist"))
+```
+
+**Exercise 18.** I have introduced duplicated rows in the `band_instruments2_messy` dataset. What happens if this dataset is left joined with the `band_members` dataset? Compare these results to the results from **Exercise 17**.
+
+```{r join-ex18}
+band_instruments2_messy <- bind_rows(band_instruments2, band_instruments2)
+left_join(band_members, band_instruments2_messy, by = c("name" = "artist"))
+```
+
+**Exercise 19.** As alluded to in **Exercise 18**, duplicated rows can sometimes cause headaches when joining datasets. To avoid this, we can use the `distinct()` function to remove duplicate rows. Take a quick look at the help page (`? dplyr::distinct`) and use `distinct()` to remove duplicate rows from the `band_instruments2_messy` dataset.
+
+```{r join-ex19}
+band_instruments2_messy |> 
+  distinct()
+# or if we want to only look at duplicates in the artist column
+band_instruments2_messy |> 
+  distinct(artist, .keep_all = TRUE)
+```
+
+# tidyr
+
+tidyr contains functions for *tidying* data. Tidy data refers to data where:
+
+-   Each variable is a column; each column is a variable.
+-   Each observation is a row; each row is an observation.
+-   Each value is a cell; each cell is a single value.
+
+Think of this as just a standard way of storing data, which is generally used as a guiding principle throughout the tidyverse. However, this is perhaps not the most important thing to understand about `tidyr` at the moment.
+
+More importantly, there are two main functions from the `tidyr` R package -- `pivot_longer()` and `pivot_wider()` -- that are commonly needed for data wrangling and plotting tasks. These functions are used to convert (or "pivot") data between *wide* and *long* formats. A longer tutorial about "pivoting" can be found [here](https://tidyr.tidyverse.org/articles/pivot.html).
+
+Without going into too many details here, `pivot_longer()` takes data and makes it "longer" by increasing the number of rows and decreasing the number of columns. On the other hand, `pivot_wider()` takes data and makes it "wider" by increasing the number of columns and decreasing the number of rows.
+
+First, let's take a look at `pivot_longer()`.
+
+```{r pivot-1}
+# add sample ID as a column for demonstration purposes
+iris_df <- iris |> 
+  rownames_to_column("id")
+iris_df
+```
+
+```{r pivot-2}
+# convert to "longer" format
+iris_long <- iris_df |> 
+  pivot_longer(
+    # specify columns to pivot to longer format (all other columns serve as "IDs")
+    cols = c(contains("Sepal"), contains("Petal")),
+    # name of column that will contain the variable names
+    names_to = "Variable",
+    # name of column that will contain the values
+    values_to = "Value"
+  )
+iris_long
+```
+
+Before performing this `pivot_longer()` step, each flower in the `iris` dataset had one row of data. After `pivot_longer()`, each flower now corresponds to multiple (specifically, 4) rows of data, with each row giving the value of a different variable (e.g., `Sepal.Length`, `Sepal.Width`, `Petal.Length`, `Petal.Width`) for that flower. We will see later that this data format is particularly useful for plotting.
+
+To convert this longer data back to its original (wider) data, we can use `pivot_wider()` like shown below.
+
+```{r pivot-3}
+iris_wide <- iris_long |> 
+  pivot_wider(
+    names_from = "Variable",
+    values_from = "Value"
+  )
+```
+
+`pivot_wider()` takes the column specified in `names_from` and "stretches" it out so that every unique value in the `names_from` (here, `"Variable"`) column gets its own column. Then, the `values_from` column fills in the cells of the new columns.
+
+**Exercise 20.** Currently, the `mtcars_df` dataset below is in wide format. Pivot all columns except for the `"id"` column into a longer format. Name the resulting dataset `mtcars_long`. Hint: your resulting output should have 352 rows and 3 columns.
+
+```{r tidyr-ex20}
+mtcars_df <- mtcars |> 
+  rownames_to_column("id")
+
+mtcars_long <- mtcars_df |>
+  pivot_longer(
+    cols = -id,
+    names_to = "Variable",
+    values_to = "Value"
+  )
+```
+
+**Exercise 21.** Convert the `mtcars_long` dataset back to its original wide format. Name the resulting dataset `mtcars_wide`.
+
+```{r tidyr-ex21}
+mtcars_wide <- mtcars_long |>
+  pivot_wider(
+    names_from = "Variable",
+    values_from = "Value"
+  )
+```
+
+# ggplot2
+
+`ggplot2` is a plotting system for R that is based on the grammar of graphics. The main idea behind `ggplot2` is that you can build up a plot by adding different layers to it. While the learning curve to `ggplot2` is perhaps steeper than base R plotting, `ggplot2` is by far a more powerful and flexible plotting engine and worth taking time to master.
+
+In an attempt to keep this tutorial as short as possible, we will only touch on the basics of `ggplot2` to get you up and running. There will be plenty of time the rest of the semester to hone your `ggplot2` skills to make fancier and fancier plots.
+
+Ok, so let's begin with just a simple scatter plot using `ggplot2`. Below, we plot the sepal length against the sepal width for the `iris` dataset.
+
+```{r ggplot-1}
+ggplot(iris) +
+  aes(x = Sepal.Width, y = Sepal.Length) +
+  geom_point()
+```
+
+Let's take a look at each line of code in turn:
+
+1.  `ggplot(iris)`: initializes a `ggplot2` object and tells the rest of the layers to pull the data from the `iris` dataset.
+2.  `aes(x = Sepal.Width, y = Sepal.Length)`: specifies the **aes**thetic mappings (i.e., how the data should be represented visually). Here, we map the `Sepal.Width` column to the x-axis and the `Sepal.Length` column to the y-axis.
+3.  `geom_point()`: adds a layer to the plot that displays the data as points.
+
+Each of these 3 *layers* is added together with `+` to create the final plot. This is the basic idea behind `ggplot2` -- specify the data used for plotting, the columns in that data to use in various parts of the plot, and the type of plot to create.
+
+**Exercise 22.** Create a scatter plot showing the relationship between mileage per gallan (`mpg`) and weight (`wt`) in the `mtcars` dataset.
+
+```{r ggplot-ex22}
+ggplot(mtcars) +
+  aes(x = mpg, y = wt) +
+  geom_point()
+```
+
+What makes `ggplot2` so powerful is the ability to take a simple grammar and to add more interesting aesthetics as well as additional layers to the plot. For example, we can color the points in the scatter plot based on the species of the flower.
+
+```{r ggplot-2}
+ggplot(iris) +
+  aes(x = Sepal.Width, y = Sepal.Length, color = Species) +
+  geom_point()
+```
+
+As another example, consider the following plot which adds two different `geom_*` layers, namely a boxplot and a violin plot, so that we can see both some important summary statistics and the distribution of the sepal lengths for each species.
+
+```{r ggplot-3}
+ggplot(iris) +
+  aes(x = Species, y = Sepal.Length) +
+  geom_violin() +
+  geom_boxplot(width = 0.2, color = "gray70")
+```
+
+Notice that it is also possible to specify different options in each layer. In the above example, we changed the color of the boxplot to be gray and made the width of the boxplot narrower via `geom_boxplot(width = 0.2, color = "gray70")`.
+
+**Exercise 23.** Flip the order of the boxplot and violin plot layers in the plot above, i.e., first add the `geom_boxplot()` layer and then add the `geom_violin()` layer. What happens and can you explain what is going on?
+
+```{r ggplot-ex23}
+ggplot(iris) +
+  aes(x = Species, y = Sepal.Length) +
+  geom_boxplot(width = 0.2, color = "gray70") +
+  geom_violin()
+
+#> The boxplot layer is drawn first, followed by the violin layer. The violin plots are being plotted on top of the boxplots, which are hidden behind the violin plots currently.
+```
+
+An admittedly confusing part about `ggplot2` is that you can specify options like `color`, `size`, `linetype`, etc in both the `aes()` mapping and in the `geom_*()` layer. In general, options specified in the `aes()` mapping are used to map *data* to visual properties (e.g., mapping the `Species` column to the `color` of the points), while options specified in the `geom_*()` layer are used to set the visual properties directly (e.g., setting the `color` of the boxplot to be gray). To help illustrate what we mean by this, suppose we had accidentally set `color = "gray70"` in the `aes()` instead of the `geom_boxplot()` layer.
+
+```{r ggplot-4}
+ggplot(iris) +
+  aes(x = Species, y = Sepal.Length, color = "gray70") +
+  geom_violin() +
+  geom_boxplot(width = 0.2)
+```
+
+What we see seems very strange. The color is "red", not "gray". This is because `ggplot2` is trying to map the color aesthetic to the specified *data*, which in this case is the string `"gray70"`. `ggplot2` by default interprets this data string as a factor and assigns a color to each level of the factor. This color happens to be red. Clearly, this is not what we want. Instead, we want to directly set the color of the boxplot to be gray, which is why we should have set `color = "gray70"` in the `geom_boxplot()` layer.
+
+Another way to visualize this same data is with density plots and faceting (see `? facet_grid()` and `? facet_wrap()`).
+
+```{r ggplot-5}
+ggplot(iris) +
+  aes(x = Sepal.Length) +
+  facet_wrap(~ Species) +
+  geom_density()
+```
+
+Faceting is a powerful tool in `ggplot2` that allows you to create multiple subplots, one for each unique level of a variable. In the above example, we created a separate density plot for each species of flower.
+
+We can even plot the distribution of each variable, colored by species type, in the `iris` dataset by leveraging both `pivot_longer()` and `ggplot2`.
+
+```{r ggplot-6}
+iris_long <- iris |> 
+  tidyr::pivot_longer(
+    cols = -Species,
+    names_to = "Variable",
+    values_to = "Value"
+  )
+ggplot2::ggplot(iris_long) +
+  ggplot2::aes(x = Value, fill = Species) +
+  ggplot2::geom_density(alpha = 0.3) +
+  ggplot2::facet_wrap(~ Variable, scales = "free")
+```
+
+The `pivot_longer()` step is used to convert the `iris` data to a longer format, where each variable's value is in a separate row. This allows us to then use faceting to create a separate plot for each variable.
+
+**Exercise 24.** Re-make the plot above but using `facet_grid()` instead of `facet_wrap()`. What is the difference between these two functions?
+
+```{r ggplot-ex24}
+iris_long <- iris |> 
+  tidyr::pivot_longer(
+    cols = -Species,
+    names_to = "Variable",
+    values_to = "Value"
+  )
+ggplot2::ggplot(iris_long) +
+  ggplot2::aes(x = Value, fill = Species) +
+  ggplot2::geom_density(alpha = 0.3) +
+  ggplot2::facet_grid(~ Variable, scales = "free")
+
+#> facet_grid() creates a 2D grid of plots (defined by the inputted formula, here ~ Variable), as opposed to facet_wrap() which creates a 1D strip of plots, which is then wrapped into a 2D grid.
+```
+
+**Exercise 25.** Plot a histogram of the values for each variable in the `mtcars` dataset using `facet_wrap()`. That is, you should end up with one histogram for each of `mpg`, `cyl`, `disp`, `hp` `drat`, `wt`, `qsec`, `vs`, `am`, `gear`, and `carb`.
+
+```{r ggplot-ex25}
+mtcars |> 
+  pivot_longer(
+    cols = everything(),
+    names_to = "Variable",
+    values_to = "Value"
+  ) |> 
+  ggplot() +
+  aes(x = Value) +
+  facet_wrap(~ Variable, scales = "free") +
+  geom_histogram(bins = 12)
+```
+
+**Exercise 26.** Create a scatter plot of `mpg` against `wt` in the `mtcars` dataset, but facet the plot by the number of cylinders (`cyl`) and number of gears (`gear`). In particular, try using `facet_grid()` so that each row is a different number of cylinders and each column is a different number of gears.
+
+```{r ggplot-ex26}
+mtcars |> 
+  ggplot() +
+  aes(x = mpg, y = wt) +
+  geom_point() +
+  facet_grid(cyl ~ gear)
+```
+
+In all of the examples above, a single dataset and a single aesthetic mapping were used. However, it is sometimes useful to use different datasets and aesthetic mappings in different `geom_*()` layers. For example, suppose we want to make a density plot of sepal lengths for each species in the `iris` dataset, but we also want to add a vertical line to the plot that shows the mean sepal length for each species. We can do this as follows:
+
+```{r ggplot-7}
+# compute mean Sepal.Length for each species
+mean_iris <- iris |> 
+  group_by(Species) |> 
+  summarize(Sepal.Length.mean = mean(Sepal.Length))
+
+ggplot(iris) +
+  aes(x = Sepal.Length, fill = Species) +
+  geom_density(alpha = 0.3) +
+  geom_vline(
+    aes(xintercept = Sepal.Length.mean, color = Species),
+    data = mean_iris,
+    linetype = "dashed"
+  )
+```
+
+A couple things to note in particular:
+
+-   Since the aesthetic mapping and the data are not specified inside `geom_density()`, then by default, the `geom_density()` layer will use the data and aesthetic mapping specified in the base `ggplot()` and `aes()` layer, respectively.
+-   In contrast, the aesthetic mapping and the data are specified inside `geom_vline()`. This is because we want to use the `mean_iris` dataset (not the `iris` dataset) to get the mean sepal length for each species and to color the vertical lines by species.
+
+**Exercise 27.** The following chunk of code runs an error. Why is it running an error, and how can we fix the code so that it outputs a violin boxplot without error?
+
+```{r ggplot-ex27}
+# # this throws an error! There is no "default" aesthetic mapping that geom_boxplot() can pull from, so the error being thrown is because geom_boxplot() is missing the aesthetic mapping.
+# ggplot(mtcars) +
+#   geom_violin(
+#     aes(x = as.factor(cyl), y = mpg)
+#   ) +
+#   geom_boxplot(width = 0.2)
+ggplot(mtcars) +
+  aes(x = as.factor(cyl), y = mpg) +
+  geom_violin() +
+  geom_boxplot(width = 0.2)
+```
+
+Lastly, while we will not dive into the details here, `ggplot2` is highly customizable. For example, we can change the theme of the plot, modify the axis/legend labels and titles, and much more. Some resources to help you get started with customizing your `ggplot2` are:
+
+-   <https://rdpeng.github.io/RProgDA/customizing-ggplot2-plots.html>
+-   <https://www.sthda.com/english/articles/32-r-graphics-essentials/125-ggplot-cheat-sheet-for-great-customization/>
+
+# purrr
+
+R is infamous for having very very slow for loops. Thus, it's highly recommended to avoid using for loops in R whenever possible. As an alternative to for loops, we can usually vectorize our operations (i.e., apply the same operation to an entire vector at once) or use functional programming techniques provided in the `purrr` package.
+
+Again, no need to get bogged down in the technical details of functional programming. The main functions you will likely use from `purrr` are `map()` and its cousins (see `? map()`, `? map2()`, `? pmap()`) which all work similarly, so let's focus simply on `map()`. The `map()` function is used to apply a function to each element of a list or vector, and it always returns a list.
+
+Let's look at an example. Below, we use `map()` to apply the `mean()` function to each item of a list.
+
+```{r purrr-1}
+# create a list of items
+x <- list(
+  a = 1:10, 
+  beta = exp(-3:3), 
+  logic = c(TRUE, FALSE, FALSE, TRUE)
+)
+
+# apply the mean function to each item of the list
+purrr::map(x, function(x) mean(x))
+# or using an allowed shorthand
+purrr::map(x, mean)
+```
+
+This is equivalent to the following for loop:
+
+```{r purrr-2}
+# initialize an empty list to store the results
+result <- list()
+# loop through each item of the list and apply the mean function
+for (i in names(x)) {
+  result[[i]] <- mean(x[[i]])
+}
+result
+```
+
+If you are familiar with the `lapply()` function, then you can think of `map()` as a tidy version of `lapply()`. In particular, the above code is equivalent to the following code using `lapply()`.
+
+```{r purrr-3}
+lapply(x, mean)
+```
+
+While `map()` and `lapply()` are the same for most use cases, there are some subtle differences between the two. If you are interested in learning more, I would encourage you to take a look at this [vignette](https://purrr.tidyverse.org/articles/base.html).
+
+**Exercise 28.** Rewrite the following code using `map()`.
+
+```{r purrr-ex28}
+result <- list()
+for (col in colnames(iris)) {
+  # get the object type of each column in the iris dataset (e.g., "numeric", "factor", etc.)
+  result[[col]] <- class(iris[[col]])
+}
+
+map(iris, class)
+```
