@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+lab1/R-solutions/
+
+*.DS_Store
+
+*/data/*
