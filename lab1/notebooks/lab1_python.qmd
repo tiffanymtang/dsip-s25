@@ -20,14 +20,11 @@ import sys
 sys.path.append("..")
 
 from os.path import join as oj
-from python_solutions.load import load_dates_data, load_mote_location_data, load_redwood_data
-from python_solutions.clean import clean_dates_data, clean_mote_location_data, clean_redwood_data
+from python.load import load_dates_data, load_mote_location_data, load_redwood_data
+from python.clean import clean_dates_data, clean_mote_location_data, clean_redwood_data
 
 DATA_PATH = oj("..", "data")
 ```
-
-<!-- :::{.panel-tabset .nav-pills} -->
-:::{.panel-tabset}
 
 # Introduction
 
@@ -62,5 +59,3 @@ redwood_log_df = clean_redwood_data(redwood_log_orig)
 ```
 
 # Exploratory Data Analysis
-
-:::
