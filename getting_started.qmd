@@ -1,0 +1,645 @@
+---
+title: "Setting up git, GitHub, and a reproducible environment"
+author: "Tiffany Tang"
+format: 
+  html:
+    code-fold: false
+    code-summary: "Show Code"
+    code-tools: true
+    theme: sandstone
+    # theme: cerulean
+    embed-resources: true
+toc: true
+number-sections: true
+execute: 
+  warning: false
+  message: false
+  eval: false
+---
+
+# Installing tools
+
+Before we get started with this walkthrough, please make sure that you have the following tools installed on your computer:
+
+-   Check that you have installed **git** on your computer (<https://git-scm.com/book/en/v2/Getting-Started-Installing-Git>)
+-   Please sign up for a **GitHub** account (<https://github.com>). In particular, sign up for the GitHub student pack (<https://education.github.com/>) so that you can get unlimited private repositories and other perks. You are a "student" and want an "individual account."
+-   While it is possible to use git/GitHub using only your terminal, it can sometimes be easier to use a git client/GUI. The following git clients/GUIs are optional, but I would highly recommend that you download:
+    -   **GitHub Desktop** (<https://desktop.github.com/download/>): a desktop GUI for interacting with GitHub
+    -   **GitKraken** (<https://www.gitkraken.com/>): a nicer alternative to GitHub Desktop
+-   The following is also optional, but I would recommend that you download and set up **GitHub Co-pilot** (<https://github.com/features/copilot>) for code completion. After downloading GitHub Co-pilot, here are instructions for how to set it up in Rstudio (<https://docs.posit.co/ide/user/ide/guide/tools/copilot.html>) and in VS code (<https://code.visualstudio.com/docs/copilot/overview>).
+
+This walkthrough will also build upon a few other useful tools:
+
+-   **RStudio** (<https://posit.co/download/rstudio-desktop/>): an integrated development environment (IDE) for R
+-   **VS Code** (<https://code.visualstudio.com/download>): a code editor that can be used with many programming languages (e.g., python, R, ...)
+-   **Quarto** (<https://quarto.org/docs/get-started/>): a tool for creating reproducible documents (akin to R Markdown, but can be used with any programming language)
+
+# Git/GitHub Walkthrough
+
+At a high-level, what is git and GitHub?
+
+-   **git**: a version control system that allows you to track changes in your code
+-   **GitHub**: a platform that allows you to host your git repositories online/remotely
+
+There many possible starting points for creating/initializing a GitHub repository:
+
+A.  Start with an **existing** remote repository from GitHub;
+B.  Create a **new** remote repository on GitHub; or
+C.  Start with an **existing** local repository on your computer.
+
+In this walkthrough, we will be setting up two GitHub repositories:
+
+1.  `dsip-s25`: repository with course materials (lectures, code, etc.)
+    -   To set up this `dsip-s25` repository, we will use option (A) above.
+    -   You won't be interacting with this repository much besides *pulling* to receive course materials.
+2.  `dsip`: **your** repository for your own work (e.g., labs)
+    -   To set up this `dsip` repository, we will use option (B) above.
+    -   This is the repository that you will be interacting with the most.
+
+## Instructions to set up the `dsip-s25` repository
+
+::: panel-tabset
+### Terminal {.unnumbered}
+
+In your terminal:
+
+1.  Navigate to the directory where you want to store the course materials, e.g.,
+
+``` bash
+cd path/to/directory
+```
+
+2.  Clone the `dsip-s25` repository by running the following command:
+
+``` bash
+git clone https://github.com/tiffanymtang/dsip-s25.git
+```
+
+> Note: This will create a new directory called `dsip-s25` in your current working directory. To see this, you can run `ls`
+
+3.  To update the course materials at any point during the semester, you should navigate *into* the `dsip-s25` directory, e.g.,
+
+``` bash
+cd dsip-s25
+```
+
+and run
+
+``` bash
+git pull
+```
+
+### GitHub Desktop {.unnumbered}
+
+1.  Go to: <https://github.com/tiffanymtang/dsip-s25>
+
+2.  Click on the green "\<\> Code" button and then click on "Open with GitHub Desktop".
+
+3.  This should automatically open up your GitHub Desktop application and show you the following prompt: ![](figures/gh_desktop_clone.png){fig-align="center"} You can change where you want to store the repository on your computer by clicking on the "Choose..." button. Once you are satisfied with the location, click on the "Clone" button.
+
+4.  To update the course materials at any point during the semester,
+
+    a.  Make sure that you are in the `dsip-s25` repository in GitHub Desktop. You can check this by looking at the top left corner of the application where it says "Current Repository".
+    b.  Click on the "Fetch origin" button (at the top). If there are any changes on the remote, this button will change to "Pull origin". Click on the "Pull origin" button to "pull" the updates to your local repository.
+
+### GitKraken {.unnumbered}
+
+1.  Open GitKraken and click on the "Clone a repo" button.
+
+2.  In the URL field, enter the following URL: <https://github.com/tiffanymtang/dsip-s25>. You can select where you want to store this repository on your computer by clicking on the "Browse" button next to "Where to clone to". Once you are satisfied with the location, click on the "Clone the repo!" button.
+
+    ![](figures/gitkraken_clone.png){fig-align="center"}
+
+3.  If a pop-up appears asking you whether to open the `dsip-s25` repository, go ahead and click on the "Open Now" button.
+
+4.  To update the course materials at any point during the semester, click on the "Pull" button at the top of the application.
+
+    ![](figures/gitkraken_pull.png){fig-align="center"}
+:::
+
+## Instructions to set up your `dsip` repository
+
+Next, we will create your personal `dsip` repository that you will be using to work on your labs. Unlike the `dsip-s25` repository which was already an existing GitHub repository (and thus you only had to clone it locally), you will be creating your `dsip` repository from scratch on GitHub.
+
+1.  Go to: <https://github.com/> and log in.
+
+2.  Click on the green "New" button (on the left) to create a new repository.
+
+3.  Fill in the following information:
+
+    -   **Owner**: your GitHub username
+    -   **Repository name**: `dsip`
+    -   **Public or Private**: Please choose "Private" so that only you (and your added collaborators) can see your repository.
+    -   **Initialize this repository with**: I would recommend checking the box for "Add a README file" so that you can easily clone the repository to your computer.
+    -   **Add .gitignore**: For now, you can leave this as "None".
+    -   **Add a license**: I would recommend selecting "MIT License" from the dropdown menu, but this is optional.
+
+    ![](figures/gh_create.png){fig-align="center"}
+
+4.  Click on the green "Create repository" button.
+
+5.  Once you have created the repository, you will be taken to the repository's main page. We next need to "clone" the (remote) repository to our local computers like we did with the `dsip-s25` repository. So following the same steps from before:
+
+::: panel-tabset
+### Terminal {.unnumbered}
+
+In your terminal:
+
+6.  Navigate to the directory where you want to store your `dsip` repository, e.g.,
+
+``` bash
+cd path/to/directory
+```
+
+7.  Clone the `dsip` repository by running the following command:
+
+``` bash
+git clone https://github.com/{your_github_username}/dsip.git
+```
+
+> Note: This will create a new directory called `dsip` in your current working directory. To see this, you can run `ls`
+
+### GitHub Desktop {.unnumbered}
+
+6.  On your `dsip` repository's main GitHub page, click on the green "\<\> Code" button and then click on "Open with GitHub Desktop".
+7.  This should automatically open up your GitHub Desktop application and show you the following prompt: ![](figures/gh_desktop_clone2.png){fig-align="center"} You can change where you want to store the repository on your computer by clicking on the "Choose..." button. Once you are satisfied with the location, click on the "Clone" button.
+
+### GitKraken {.unnumbered}
+
+6.  Open GitKraken and click on the "Clone a repo" button.
+
+7.  In the URL field, enter the following URL: [https://github.com/{your_github_username}/dsip](https://github.com/%7Byour_github_username%7D/dsip){.uri}. You can select where you want to store this repository on your computer by clicking on the "Browse" button next to "Where to clone to". Once you are satisfied with the location, click on the "Clone the repo!" button.
+
+    ![](figures/gitkraken_clone2.png){fig-align="center"}
+
+8.  If a pop-up appears asking you whether to open the `dsip` repository, go ahead and click on the "Open Now" button.
+:::
+
+So far, we've set up two different GitHub repositories. Next, we will go over how to interact/make changes to these repositories and to push these changes to GitHub.
+
+## A typical GitHub workflow
+
+![](figures/github_workflow.png){fig-align="center" color="black"}
+
+A typical GitHub workflow involves the following four commands:
+
+1.  First, `git pull` to download changes from the remote GitHub repository to your local computer
+2.  After making changes to your local repository, `git add` files that you'd like to stage for your next commit
+3.  Next, `git commit` to store a "snapshot" of these added changes in your git version history
+4.  Finally, `git push` to upload these local changes to the remote GitHub repository
+
+To see this workflow in action, let's make a minor change to our `dsip` repository. In particular, let's create a new text file called `info.txt` that contains the following two lines:
+
+``` raw
+name = "Your Name"
+github_name = "Your GitHub Username"
+```
+
+Please place this `info.txt` file in your `dsip` folder (i.e., the file path should be `dsip/info.txt`).
+
+Let's now go through the four steps of the GitHub workflow. We will look at the equivalent commands using terminal, GitHub Desktop, and GitKraken side-by-side.
+
+::: {.columns .column-page}
+::: {.column width="31%"}
+### Terminal {.unnumbered}
+
+0.  **Navigate to the desired repository** (i.e., your `dsip` repository):
+
+``` bash
+cd path/to/dsip
+```
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+### GitHub Desktop {.unnumbered}
+
+0.  **Navigate to the desired repository** (i.e., your `dsip` repository):
+
+    Click on the top left where it says "Current Repository" and select your `dsip` repository (if not already selected).
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+### GitKraken {.unnumbered}
+
+0.  **Navigate to the desired repository** (i.e., your `dsip` repository):
+
+    Open your `dsip` repository in GitKraken (e.g., using the "Browse for a repo" button).
+:::
+:::
+
+::: {.columns .column-page}
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+1.  **To pull**:
+
+``` bash
+git pull
+```
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+1.  **To pull**:
+
+    Click on the "Fetch origin" button (at the top). If there are any changes on the remote, this button will change to "Pull origin". Click on the "Pull origin" button.
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+1.  **To pull**:
+
+    Click on the "Pull" button at the top of the application.
+:::
+
+> Recall: "pulling" is the process of downloading changes from the remote GitHub repository to your local computer.
+:::
+
+::: {.columns .column-page}
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+2.  **To add modified/new files to staging area**:
+
+``` bash
+git add info.txt
+```
+
+> You may want to check the status of your git repository using `git status` to see which files have been modified and/or added to the staging area. It is common to run `git status` before and/or after each step of this workflow when first learning git.
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+2.  **To add modified/new files to staging area**:
+
+    Check the box next to the file(s) that you want to add to the staging area.
+
+    ![](figures/gh_desktop_add.png){fig-align="center"}
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+2.  **To add modified/new files to staging area**:
+
+    Click on the "Stage File" button next to the file(s) that you want to add to the staging area.
+
+    ![](figures/gitkraken_add.png){fig-align="center"}
+
+    Once you click on "Stage File", this will move the file(s) from the "Unstaged Files" section to the "Staged Files" section.
+:::
+:::
+
+::: {.columns .column-page}
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+3.  **To commit staged files** (with message/description):
+
+``` bash
+git commit -m "add info.txt"
+```
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+3.  **To commit staged files** (with message/description):
+
+    Add a commit message to the text input field next to your GitHub icon. Once you are satisfied with the message, click on the "Commit to main" button.
+
+    ![](figures/gh_desktop_commit.png){fig-align="center"}
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+3.  **To commit staged files** (with message/description):
+
+    Add a commit message to the "Commit summary" field. Once you are satisfied with the message, click on the "Commit changes" button.
+
+    ![](figures/gitkraken_commit.png){fig-align="center"}
+:::
+
+> Tip: It is good practice to keep your commits modular and focused (e.g., they should address one bug or add one feature to your code). This will make it easier to track version changes and to revert back to previous versions if needed. To help facilitate this, you should also try to write informative commit messages that describe the changes you made in the commit.
+:::
+
+::: {.columns .column-page}
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+4.  **To push**:
+
+``` bash
+git push
+```
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+4.  **To push**:
+
+    Click on the "Push origin" button (at the top).
+
+    ![](figures/gh_desktop_push.png){fig-align="center"}
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+4.  **To push**:
+
+    Click on the "Push" button at the top of the application. After you click on "Push", the head of the local repository (computer icon) and the head of the remote repository (your GitHub icon) should be aligned at the same commit.
+
+    ![](figures/gitkraken_push.png){fig-align="center"}
+:::
+
+> Recall: "pushing" is the process of uploading changes from your local computer to the remote GitHub repository. If you do not push your changes, they will not be reflected on GitHub and not accessible to collaborators.
+:::
+
+------------------------------------------------------------------------
+
+Lastly, please add `tiffanymtang` as a collaborator in your `dsip` repository (so that I can view your lab submissions). To do this, please:
+
+1.  Go to your `dsip` repository on GitHub: [https://github.com/{your_github_username}/dsip](https://github.com/\%7Byour_github_username\%7D/dsip){.uri}
+2.  Go to Settings (on the top) \> Collaborators (on the left) \> Add people (the green button) \> Enter `tiffanymtang` \> Click on "Add tiffanymtang to this repository".
+
+
+# Reproducible Environment Walkthrough
+
+In this section, we will create a reproducible environment for your lab 1 using `renv` (for R users) and `conda` (for Python users). To get started, let's first initialize your `lab1/` directory.
+
+(Before proceeding, please ensure that you have pulled the latest version of the `dsip-s25` repository to your computer.)
+
+1. Navigate to your `dsip` repository on your computer.
+2. Create a new subdirectory of `dsip` called `lab1/`.
+3. Copy and paste the contents of the `lab1/` directory from the `dsip-s25` repository to your `dsip/lab1/` directory.
+4. Download the `lab1/data/` folder from Canvas. This directory contains all of the data files that you will need for lab 1. Place this `data/` folder under your `dsip/lab1/` directory.
+
+At this point, your `dsip` folder should look something like this:
+
+![](figures/lab1_directory.png){fig-align="center" width="50%"}
+
+Next, we are going to initialize a reproducible environment for your lab 1. We will be using `renv` for R users and `conda` for Python users.
+
+## Setting up `renv` for R users
+
+1. **Open R project**: Open the `dsip/lab1/lab1.Rproj` file. This should open up RStudio with the `lab1/` directory as your current project and current working directory.
+    
+> Note: for future labs, you might not be given an R project file to start. In that case, you would need to *create* an R project for that particular lab. To do this, open RStudio > click on File > New Project > Existing Directory > navigate to the directory of the lab you are working on (e.g., `lab2/`).
+
+> Note: It is best practice to have a separate R project for each lab that you work on. `renv` environments typically accompany an R project, and thus, creating a new R project for each lab will make it easier to manage the different packages needed for each lab.
+    
+2. **Install `renv`**: In the R console, run the following command to install the `renv` package:
+``` r
+install.packages("renv")
+```
+    
+You will only need to do this once.
+    
+3. **Initialize `renv`**: In the R console, run the following command to initialize an `renv` for your project:
+``` r
+renv::init()
+```
+    
+> Since we already have R code in our project (see .R files in `R/` folder), `renv` will do its best to automatically detect and install the packages that are being used in your project. 
+    
+> When you initialize `renv`, you will see a new `renv.lock` file and a new `renv/` directory in your project directory (i.e., `dsip/`).  The `renv/` directory contains symbolic links to all of the packages needed/used in your project. [Rather than installing a new copy of the package for every `renv` that you might create, `renv` uses symbolic links that point to your main R package library to save on storage]. The `renv.lock` file (also called the "lockfile") contains all of the necessary package information to exactly reproduce your R environment on a different computer. 
+
+![](figures/renv_init.png){fig-align="center" width="50%"}
+
+4. **Adding packages**: As you work on your lab, you may need to install new packages. To do install/use these in your `renv`, you can install them by running the following command in your R console:
+``` r
+renv::install("package_name")
+```
+e.g,
+``` r
+renv::install("skimr")
+```
+
+5. **Snapshot your environment**: After you have installed the necessary packages for your lab, you need to "snapshot" your environment, that is, to record the latest package information in your `renv.lock` lockfile. To do this, run the following command in your R console:
+``` r
+renv::snapshot()
+```
+
+> To see which packages are being used in your project but not yet installed or snapshotted in the lock file, you can run the following command in your R console: `renv::status()`.
+
+***
+
+To reproduce your exact R environment on a different computer:
+
+1. **Clone your `dsip` repository** to the new computer.
+2. **Open the R project**: Open the `lab1.Rproj` file in RStudio.
+3. **Install `renv`**: If you haven't already installed `renv` on the new computer, you can do so by running the following command in your R console:
+``` r
+# This will only need to be done once
+install.packages("renv")
+```
+
+4. **Restore your environment**: To restore your R environment to the exact state that it was in when you last worked on it, you can run the following command in your R console:
+``` r
+renv::restore()
+```
+
+## Setting up `conda` for Python users
+
+0. **Navigate to your `lab1/` directory**: Open your terminal and navigate to your `lab1/` directory, e.g.,
+``` bash
+cd path/to/dsip/lab1
+```
+
+1. **Create a conda environment**: To create a conda environment for your lab 1, run the following command in your terminal:
+``` bash
+conda create --name dsip_lab1
+```
+
+> Note: you can create a conda environment with specific versions of Python, packages, and other settings. More information on how to do this can be found in the [conda documentation](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
+
+2. **Activate the conda environment**: To activate the conda environment, run the following command in your terminal:
+``` bash
+conda activate dsip_lab1
+```
+
+> If you run into an error when trying to activate the conda environment, you may need to run the following command to initialize conda in your shell: `conda init` (or or `conda init zsh` if you are using zsh).
+
+3. **Install packages**: You can install packages in your conda environment using the `conda install` command. For example, the starter python code in `dsip/lab1/python/` uses the `pandas` and `statsmodels` packages. To install these packages, you can run the following command in your terminal:
+``` bash
+conda install pandas statsmodels
+```
+
+> To see which packages are installed in your conda environment, you can run the following command in your terminal: `conda list`.
+
+4. **Export environment**: After you have installed the necessary packages for your lab, you should export your conda environment to a YAML file. This YAML file contains a list of the packages that were installed in your conda environment. To do this, run the following command in your terminal:
+``` bash
+conda env export --from-history > environment.yml
+```
+
+> Note: the `--from-history` flag will only export the packages that you have explicitly installed in your environment (i.e., it will not include packages that were installed as dependencies of other packages). Be sure to include the `--from-history` flag when exporting your environment to ensure that you have a minimal environment file. If you exclude the `--from-history` flag, you will get a full list of all packages in your environment, including dependencies which may be specific to your operating system and will not be portable to other operating systems.
+
+5. **Create conda lock file**: While the above `environment.yml` file is great for sharing your environment with others, it does not provide instructions to *exactly* reproduce your environment across different operating system platforms. To enable exact reproducibility of our conda environment, we need to create a lock file (as we did with `renv`). To create a lock file for your conda environment, you can run the following command in your terminal:
+
+``` bash
+conda install conda-lock
+conda lock
+```
+
+***
+
+To reproduce your exact Python environment on a different computer:
+
+1. **Clone your `dsip` repository** to the new computer.
+2. **Navigate to your `lab1/` directory**: Open your terminal and navigate to your `lab1/` directory.
+3. **Install conda-lock**: If you haven't already installed `conda-lock` on the new computer, you can do so by running the following command in your terminal:
+``` bash
+# This only needs to be done once
+conda install conda-lock
+```
+4. **Restore your environment**: To restore your Python environment using the conda-lock file, you can run the following command in your terminal:
+``` bash
+conda-lock install --name dsip_lab1
+```
+
+# Using `quarto`
+
+Lastly, as part of lab 1, you will be creating a reproducible report. This can be done using various tools such as R markdown, Jupyter notebooks, and quarto. For this walkthrough, we will be using `quarto` to create a reproducible report for your lab 1 since it can be easily used, regardless of whether you are using R or Python.
+
+If you are using R/RStudio, using `quarto` is fairly straightforward and similar to using R Markdown, so we will not dwell on this. Instead, in what follows, we will go through how to use `quarto` in VS Code.
+
+0. **Open VS Code and install `quarto` extension in VS Code**: Open VS Code and go to the Extensions view by clicking on the square icon on the left sidebar or pressing `Ctrl+Shift+X` (`Cmd+Shift+X` on Mac). Search for "Quarto" and click on the install button. (This step only needs to be done once.)
+
+1. **Open relevant folder/files**: Open `lab1/` folder in VS Code (e.g., going to File > Open Folder...). Then open `lab1/notebooks/lab1_python.qmd` file.
+
+2. **Select python interpreter**: We need to choose the python interpreter that we want to use for our `quarto` document. To do this, we need to open the Command Palette by pressing `Ctrl+Shift+P` (`Cmd+Shift+P` on Mac) and then search for "Python: Select Interpreter". You can then choose the conda environment that you created for lab 1 (e.g., `dsip_lab1`).
+
+3. **Try running a code cell**: To run a code cell in your `quarto` document, you can click on the "Run Cell" button that appears above the code cell. Alternatively, you can use the keyboard shortcut `Ctrl+Enter` (`Cmd+Enter` on Mac).
+
+![](figures/vs_quarto.png){fig-align="center"}
+
+> VS Code may prompt you to install the `ipykernel` package. If you see this prompt, go ahead and install the `ipykernel` package. If you do not see this prompt, you may need to manually install the `ipykernel` package in your conda environment by running the following command in your terminal: `conda install ipykernel`. Be sure to run this command in a terminal where your `dsip_lab1` conda environment has been **activated**. If you are unsure which conda environment is currently activated, you can check by running `conda env list`. The `*` next to an environment indicates that it is the currently activated environment.
+
+4. **Render quarto document**: To render/preview your `quarto` document (e.g., to an HTML file), you can click on the "Preview" button that appears at the top right of the quarto document (it looks like a square document icon). 
+
+> When you try rendering the first time, you will probably run into an error that either says "No module named 'yaml'" or "No module named 'nbformat'". To fix this, you will need to install the jupyterlab package in your conda environment. To do this, you can run the following command in your terminal: `conda install jupyterlab`. Be sure to run this command in a terminal where your `dsip_lab1` conda environment has been **activated**. It may be easiest to run this command in the terminal used to preview your quarto document (i.e., the terminal that ran/showed the error). After installing `jupyterlab`, you should be able to successfully render/preview your quarto document. If you are unsure which conda environment is currently activated, you can check by running `conda env list`. The `*` next to an environment indicates that it is the currently activated environment.
+
+After going through this process, it is highly likely that you have installed new packages (e.g., `jupyterlab` and/or `ipykernel`) in your conda environment. Remember to update your `environment.yml` and `conda-lock.yml` files by repeating steps 4 and 5 in the "Setting up `conda` for Python users" section. That is,
+
+``` bash
+conda env export --from-history > environment.yml
+conda lock
+```
+
+# Pushing your changes to GitHub
+
+As you are working through your lab 1, it is best practice to frequently push your changes to your GitHub repository. This will ensure that your work is backed up and that you can easily revert to previous versions if needed. Given all of the setup that we've done in this walkthrough, now is a good time to make a commit and push your changes to your `dsip` repository on GitHub.
+
+But first, let's see all of the changes that we've made to our repository and are waiting to be committed and pushed. To do this, we can use any of the usual tools (terminal, GitHub Desktop, and GitKraken):
+
+::: {.columns .column-page}
+::: {.column width="31%"}
+### Terminal {.unnumbered}
+
+``` bash
+git status
+```
+
+![](figures/terminal_status.png){fig-align="center"}
+
+> Note: the output of `git status` looks quite different and cleaner compared to GitHub Desktop and GitKraken. This is a bit deceiving -- the new files that we've created in the `lab1/` directory are essentially collapsed under the `lab1/` directory in the terminal output.
+
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+### GitHub Desktop {.unnumbered}
+
+![](figures/gh_desktop_status.png){fig-align="center"}
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+### GitKraken {.unnumbered}
+
+![](figures/gitkraken_status.png){fig-align="center"}
+:::
+
+:::
+
+
+By checking the status of our repository, we see that there are some "junk" files that should not be tracked or committed. For example, the `.DS_Store` file is a hidden file that is created by macOS and should not be tracked. We can instruct git to ignore these files by creating a `.gitignore` file in our repository. This file contains a list of files and directories that we want git to ignore and never track.
+
+If you followed the R parts of this walkthrough, then a `.gitignore` file has already been created automatically (by `renv`). To find this file in your file manager, you will need to show hidden files (i.e., any files that start with `.`). To reveal hidden files in your file manager, you can press `Ctrl+Shift+.` (or `Cmd+Shift+.` on Mac). If a `.gitignore` has not yet been created, you can create one manually by opening your favorite text editor and saving an empty file with the name `.gitignore`.
+
+To add the `.DS_Store` file to the `.gitignore` file, you can open the `.gitignore` file in your text editor and add the following line:
+``` raw
+*.DS_Store
+```
+
+> Note: the `*` is a wildcard character that matches any sequence of characters. So `*.DS_Store` will match any file that ends with `.DS_Store`, and thus, adding the above line to your `.gitignore` will tell git to ignore all files that end in the extension `.DS_Store`.
+
+Some other files/folders that you should add to your `.gitignore` file include:
+``` raw
+*/data/*
+*__pycache__*
+*.ipynb_checkpoints*
+```
+
+- Please do not upload the data to GitHub due to file size constraints!
+- `__pycache__` and `.ipynb_checkpoints` are files/folders that are automatically generated by python when compiling python code and running notebooks, respectively. These do not need to be tracked and just increase the amount of clutter in your repository.
+
+After these changes, your `.gitignore` file should look something like this:
+
+![](figures/gitignore.png){fig-align="center"}
+
+Please save these changes to your `.gitignore` file. After saving these changes, you can check the status of your repository again to see that many of the files that you previously saw (e.g., .DS_Store, the data files, ...) are no longer being tracked by git. 
+
+Take one last moment to review all of the files remaining in your `git status` (or GitHub Desktop/GitKraken status view) are files that you'd like to commit and push to your GitHub repository. If you are satisfied with the files that you see, you can now proceed through the usual GitHub workflow of pulling, adding, committing, and pushing your changes to your GitHub repository.
