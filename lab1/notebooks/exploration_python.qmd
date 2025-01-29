@@ -1,0 +1,78 @@
+---
+title: "Redwood Lab Exploration"
+author: "Insert Name Here"
+format: 
+  html:
+    code-fold: show
+    code-summary: "Show Code"
+    code-tools: true
+    theme: sandstone
+    # theme: cerulean
+jupyter: python3
+toc: true
+execute: 
+  warning: false
+  message: false
+---
+
+```{python setup}
+import sys
+sys.path.append("..")
+
+from os.path import join as oj
+from python.load import load_dates_data, load_mote_location_data, load_redwood_data
+from python.clean import clean_dates_data, clean_mote_location_data, clean_redwood_data
+
+DATA_PATH = oj("..", "data")
+```
+
+# Load Data
+
+```{python load-data}
+# load dates data
+dates_orig = load_dates_data(DATA_PATH)
+
+# load motes data
+motes_orig = load_mote_location_data(DATA_PATH)
+
+# load redwood data
+redwood_all_orig = load_redwood_data(DATA_PATH, source="all")
+redwood_net_orig = load_redwood_data(DATA_PATH, source="net")
+redwood_log_orig = load_redwood_data(DATA_PATH, source="log")
+```
+
+# Intermediary Explorations
+
+Fill in any intermediary explorations or scratch work you'd like to do here (e.g., explorations done to identify issues with the data)
+
+# Clean Data
+
+```{python clean-data}
+# TODO: fill out cleaning functions in clean.py
+
+# clean dates data
+dates_df = clean_dates_data(dates_orig)
+
+# clean motes data
+motes_df = clean_mote_location_data(motes_orig)
+
+# clean redwood data
+redwood_all_df = clean_redwood_data(redwood_all_orig)
+redwood_net_df = clean_redwood_data(redwood_net_orig)
+redwood_log_df = clean_redwood_data(redwood_log_orig)
+```
+
+# Intermediary Explorations
+
+Fill in any intermediary explorations or scratch work you'd like to do here (e.g., explorations to figure out how you can merge the data)
+
+# Merge data
+
+```{r}
+# TODO: merge redwood, epoch/dates, and motes data
+# Consider writing a "merge_redwood_data()" function (e.g., in your clean.py) to do this merging step
+```
+
+# Intermediary Explorations
+
+Fill in any additional explorations you'd like to do after merging the data.
