@@ -16,8 +16,8 @@ execute:
 
 ```{r setup, include=FALSE}
 # source all functions from R/ folder
-for (fname in list.files(here::here("R"), pattern = "*.R")) {
-  source(here::here(file.path("R", fname)))
+for (fname in list.files(here::here("R_solutions"), pattern = "*.R")) {
+  source(here::here(file.path("R_solutions", fname)))
 }
 
 # path to data
@@ -38,6 +38,53 @@ redwood_all_orig <- load_redwood_data(DATA_PATH, source = "all")
 redwood_net_orig <- load_redwood_data(DATA_PATH, source = "net")
 redwood_log_orig <- load_redwood_data(DATA_PATH, source = "log")
 ```
+
+## Quick Look
+
+::: {.panel-tabset}
+
+### Dates Data
+
+```{r}
+dates_orig
+skimr::skim(dates_orig)
+```
+
+### Motes Data
+
+```{r}
+motes_orig
+skimr::skim(motes_orig)
+```
+
+### Redwood Data
+
+::: {.panel-tabset .nav-pills}
+
+#### All data
+
+```{r}
+redwood_all_orig
+skimr::skim(redwood_all_orig)
+```
+
+#### Network data
+
+```{r}
+redwood_net_orig
+skimr::skim(redwood_net_orig)
+```
+
+#### Log data
+
+```{r}
+redwood_log_orig
+skimr::skim(redwood_log_orig)
+```
+
+:::
+
+:::
 
 # Intermediary Explorations
 
