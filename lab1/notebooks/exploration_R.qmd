@@ -192,4 +192,34 @@ This might suggest that there is some network failure happening that is ultimate
 
 Note however that there are still some outliers that don't have a voltage value. We will have to deal with those (and probably other data issues) independently.
 
+Finally, what if we repeated some of these plots for all of the measured variables of interest?
+
+```{r}
+plt <- redwood_df |> 
+  tidyr::pivot_longer(
+    cols = c(humidity, temp, iPAR, rPAR)
+  ) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = epoch, y = value, color = source) +
+  ggplot2::facet_grid(name ~ ., scales = "free_y") +
+  ggplot2::geom_point()
+plt
+```
+
+Restricted to just the network data and plotting by voltage...
+
+```{r}
+plt <- redwood_df |> 
+  dplyr::filter(source == "net") |>
+  tidyr::pivot_longer(
+    cols = c(humidity, temp, iPAR, rPAR)
+  ) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = epoch, y = value, color = voltage) +
+  ggplot2::facet_grid(name ~ ., scales = "free_y") +
+  ggplot2::geom_point()
+plt
+```
+
+Again, note that these aren't the only outliers. There are also outliers in the log data, as we've seen above. Further investigation is needed to clean the log data and also to finish cleaning up the network data.
 
