@@ -8,6 +8,7 @@ format:
     code-tools: true
     theme: sandstone
     # theme: yeti
+    embed-resources: true
 lightbox: true
 toc: true
 execute: 
@@ -127,10 +128,68 @@ Fill in any intermediary explorations or scratch work you'd like to do here (e.g
 # Merge data
 
 ```{r}
-# TODO: merge redwood, epoch/dates, and motes data
-# Consider writing a "merge_redwood_data()" function (e.g., in your clean.R) to do this merging step
+#| out-width: 100%
+redwood_df <- merge_redwood_data(
+  dates_data = dates_df,
+  motes_data = motes_df,
+  redwood_net_data = redwood_net_df,
+  redwood_log_data = redwood_log_df
+)
+
+redwood_df |> 
+  dplyr::slice_head(n = 1000) |> 
+  vthemes::pretty_DT()
+```
+
+```{r}
+skimr::skim(redwood_df)
 ```
 
 # Intermediary Explorations
 
-Fill in any additional explorations you'd like to do after merging the data.
+Taking a quick look at the various variables over time... 
+
+```{r}
+plt <- redwood_df |> 
+  tidyr::pivot_longer(
+    cols = c(humidity, temp, iPAR, rPAR, voltage)
+  ) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = epoch, y = value) +
+  ggplot2::facet_grid(name ~ ., scales = "free_y") +
+  ggplot2::geom_point()
+plt
+```
+
+What if we look more closely at temperature and color points by source data?
+
+```{r}
+plt <- redwood_df |>
+  ggplot2::ggplot() +
+  ggplot2::aes(x = epoch, y = temp, color = source) +
+  ggplot2::geom_point()
+plt
+```
+
+Looks like most of the outliers are in the network dataset. We can even toggle between the log/net data and zoom into see what's going on more clostly using `plotly`. (Try double-clicking on the red/blue points in the legend to toggle between the different data sources.)
+
+```{r}
+plotly::ggplotly(plt)
+```
+
+From this, it looks like the temperature is trailing off to some outrageously large temperature value. What might be going on here? Maybe some network failure? So what if we subset the data to just the network data and color the network temperature values by voltage?
+
+```{r}
+plt <- redwood_df |>
+  dplyr::filter(source == "net") |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = epoch, y = temp, color = voltage) +
+  ggplot2::geom_point()
+plt
+```
+
+This might suggest that there is some network failure happening that is ultimately leading to erroneous measurements. Temperature doesn't typically fluctuate by that much in a short period of time (recall each epoch is 5 min). Maybe we can use the voltage values in some way to help us do our data cleaning...
+
+Note however that there are still some outliers that don't have a voltage value. We will have to deal with those (and probably other data issues) independently.
+
+
