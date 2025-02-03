@@ -49,7 +49,18 @@ def clean_redwood_data(redwood_data):
     redwood_data : pd.DataFrame
         Dataframe containing the cleaned redwood data
     '''
-    # TODO: ADD CLEANING CODE HERE
+    # Rename columns
+    redwood_data = redwood_data.rename(columns={
+        'humid_temp': 'temp',
+        'hamatop': 'iPAR',
+        'hamabot': 'rPAR'
+    })
+    
+    # Drop irrelevant column and remove NA rows and duplicate rows
+    redwood_data = redwood_data.drop(columns=['humid_adj']).dropna().drop_duplicates()
+    
+    # Plus any other cleaning steps...
+    
     return redwood_data
 
 

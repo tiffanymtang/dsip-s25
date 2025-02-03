@@ -31,7 +31,23 @@ clean_dates_data <- function(dates_data) {
 #'
 #' @returns A data frame containing the cleaned redwood data
 clean_redwood_data <- function(redwood_data) {
-  # TODO: ADD CLEANING CODE HERE
+
+  redwood_data <- redwood_data |>
+    # rename columns
+    dplyr::rename(
+      temp = humid_temp,
+      iPAR = hamatop,
+      rPAR = hamabot
+    ) |>
+    # remove irrelevant column; not sure what this variable is
+    dplyr::select(-humid_adj) |>
+    # remove na observations (do with caution!)
+    na.omit() |>
+    # remove duplicated rows
+    dplyr::distinct()
+
+  # Plus any other cleaning steps...
+
   return(redwood_data)
 }
 

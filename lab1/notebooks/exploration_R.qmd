@@ -8,6 +8,7 @@ format:
     code-tools: true
     theme: sandstone
     # theme: yeti
+lightbox: true
 toc: true
 execute: 
   warning: false
@@ -89,6 +90,18 @@ skimr::skim(redwood_log_orig)
 # Intermediary Explorations
 
 Fill in any intermediary explorations or scratch work you'd like to do here (e.g., explorations done to identify issues with the data)
+
+```{r}
+plt <- redwood_all_orig |> 
+  tidyr::pivot_longer(
+    cols = c(humidity, humid_temp, hamatop, hamabot, voltage)
+  ) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = epoch, y = value) +
+  ggplot2::facet_grid(name ~ ., scales = "free_y") +
+  ggplot2::geom_point()
+plt
+```
 
 # Clean Data
 
