@@ -1,0 +1,1467 @@
+---
+title: "Data Science in Practice: Tools and Applications"
+author: "Prof. Tiffany Tang"
+format: 
+  html:
+    code-fold: show
+    code-summary: "Show Code"
+    code-tools: true
+    theme: sandstone
+    # theme: cerulean
+    embed-resources: true
+toc: true
+number-sections: true
+execute: 
+  warning: false
+  message: false
+---
+
+# Installing tools
+
+Before we get started with this walkthrough, please make sure that you have the following tools installed on your computer:
+
+-   Check that you have installed **git** on your computer (<https://git-scm.com/book/en/v2/Getting-Started-Installing-Git>)
+-   Please sign up for a **GitHub** account (<https://github.com>). In particular, sign up for the GitHub student pack (<https://education.github.com/>) so that you can get unlimited private repositories and other perks. You are a "student" and want an "individual account."
+-   While it is possible to use git/GitHub using only your terminal, it can sometimes be easier to use a git client/GUI. The following git clients/GUIs are optional, but I would highly recommend that you download:
+    -   **GitHub Desktop** (<https://desktop.github.com/download/>): a desktop GUI for interacting with GitHub
+    -   **GitKraken** (<https://www.gitkraken.com/>): a nicer alternative to GitHub Desktop
+-   The following is also optional, but I would recommend that you download and set up **GitHub Co-pilot** (<https://github.com/features/copilot>) for code completion. After downloading GitHub Co-pilot, here are instructions for how to set it up in Rstudio (<https://docs.posit.co/ide/user/ide/guide/tools/copilot.html>) and in VS code (<https://code.visualstudio.com/docs/copilot/overview>).
+
+This walkthrough will also build upon a few other useful tools:
+
+-   **RStudio** (<https://posit.co/download/rstudio-desktop/>): an integrated development environment (IDE) for R
+-   **VS Code** (<https://code.visualstudio.com/download>): a code editor that can be used with many programming languages (e.g., python, R, ...)
+-   **Quarto** (<https://quarto.org/docs/get-started/>): a tool for creating reproducible documents (akin to R Markdown, but can be used with any programming language)
+
+# Git/GitHub Walkthrough
+
+At a high-level, what is git and GitHub?
+
+-   **git**: a version control system that allows you to track changes in your code
+-   **GitHub**: a platform that allows you to host your git repositories online/remotely
+
+There many possible starting points for creating/initializing a GitHub repository:
+
+A.  Start with an **existing** remote repository from GitHub;
+B.  Create a **new** remote repository on GitHub; or
+C.  Start with an **existing** local repository on your computer.
+
+In this walkthrough, we will be setting up two GitHub repositories:
+
+1.  `dsip-s25`: repository with course materials (lectures, code, etc.)
+    -   To set up this `dsip-s25` repository, we will use option (A) above.
+    -   You won't be interacting with this repository much besides *pulling* to receive course materials.
+2.  `dsip`: **your** repository for your own work (e.g., labs)
+    -   To set up this `dsip` repository, we will use option (B) above.
+    -   This is the repository that you will be interacting with the most.
+
+## Instructions to set up the `dsip-s25` repository
+
+::: panel-tabset
+### Terminal {.unnumbered}
+
+In your terminal:
+
+1.  Navigate to the directory where you want to store the course materials, e.g.,
+
+``` bash
+cd path/to/directory
+```
+
+2.  Clone the `dsip-s25` repository by running the following command:
+
+``` bash
+git clone https://github.com/tiffanymtang/dsip-s25.git
+```
+
+> Note: This will create a new directory called `dsip-s25` in your current working directory. To see this, you can run `ls`
+
+3.  To update the course materials at any point during the semester, you should navigate *into* the `dsip-s25` directory, e.g.,
+
+``` bash
+cd dsip-s25
+```
+
+and run
+
+``` bash
+git pull
+```
+
+### GitHub Desktop {.unnumbered}
+
+1.  Go to: <https://github.com/tiffanymtang/dsip-s25>
+
+2.  Click on the green "\<\> Code" button and then click on "Open with GitHub Desktop".
+
+3.  This should automatically open up your GitHub Desktop application and show you the following prompt: ![](figures/gh_desktop_clone.png){fig-align="center"} You can change where you want to store the repository on your computer by clicking on the "Choose..." button. Once you are satisfied with the location, click on the "Clone" button.
+
+4.  To update the course materials at any point during the semester,
+
+    a.  Make sure that you are in the `dsip-s25` repository in GitHub Desktop. You can check this by looking at the top left corner of the application where it says "Current Repository".
+    b.  Click on the "Fetch origin" button (at the top). If there are any changes on the remote, this button will change to "Pull origin". Click on the "Pull origin" button to "pull" the updates to your local repository.
+
+### GitKraken {.unnumbered}
+
+1.  Open GitKraken and click on the "Clone a repo" button.
+
+2.  In the URL field, enter the following URL: <https://github.com/tiffanymtang/dsip-s25>. You can select where you want to store this repository on your computer by clicking on the "Browse" button next to "Where to clone to". Once you are satisfied with the location, click on the "Clone the repo!" button.
+
+    ![](figures/gitkraken_clone.png){fig-align="center"}
+
+3.  If a pop-up appears asking you whether to open the `dsip-s25` repository, go ahead and click on the "Open Now" button.
+
+4.  To update the course materials at any point during the semester, click on the "Pull" button at the top of the application.
+
+    ![](figures/gitkraken_pull.png){fig-align="center"}
+:::
+
+## Instructions to set up your `dsip` repository
+
+Next, we will create your personal `dsip` repository that you will be using to work on your labs. Unlike the `dsip-s25` repository which was already an existing GitHub repository (and thus you only had to clone it locally), you will be creating your `dsip` repository from scratch on GitHub.
+
+1.  Go to: <https://github.com/> and log in.
+
+2.  Click on the green "New" button (on the left) to create a new repository.
+
+3.  Fill in the following information:
+
+    -   **Owner**: your GitHub username
+    -   **Repository name**: `dsip`
+    -   **Public or Private**: Please choose "Private" so that only you (and your added collaborators) can see your repository.
+    -   **Initialize this repository with**: I would recommend checking the box for "Add a README file" so that you can easily clone the repository to your computer.
+    -   **Add .gitignore**: For now, you can leave this as "None".
+    -   **Add a license**: I would recommend selecting "MIT License" from the dropdown menu, but this is optional.
+
+    ![](figures/gh_create.png){fig-align="center"}
+
+4.  Click on the green "Create repository" button.
+
+5.  Once you have created the repository, you will be taken to the repository's main page. We next need to "clone" the (remote) repository to our local computers like we did with the `dsip-s25` repository. So following the same steps from before:
+
+::: panel-tabset
+### Terminal {.unnumbered}
+
+In your terminal:
+
+6.  Navigate to the directory where you want to store your `dsip` repository, e.g.,
+
+``` bash
+cd path/to/directory
+```
+
+7.  Clone the `dsip` repository by running the following command:
+
+``` bash
+git clone https://github.com/{your_github_username}/dsip.git
+```
+
+> Note: This will create a new directory called `dsip` in your current working directory. To see this, you can run `ls`
+
+### GitHub Desktop {.unnumbered}
+
+6.  On your `dsip` repository's main GitHub page, click on the green "\<\> Code" button and then click on "Open with GitHub Desktop".
+7.  This should automatically open up your GitHub Desktop application and show you the following prompt: ![](figures/gh_desktop_clone2.png){fig-align="center"} You can change where you want to store the repository on your computer by clicking on the "Choose..." button. Once you are satisfied with the location, click on the "Clone" button.
+
+### GitKraken {.unnumbered}
+
+6.  Open GitKraken and click on the "Clone a repo" button.
+
+7.  In the URL field, enter the following URL: [https://github.com/{your_github_username}/dsip](https://github.com/%7Byour_github_username%7D/dsip){.uri}. You can select where you want to store this repository on your computer by clicking on the "Browse" button next to "Where to clone to". Once you are satisfied with the location, click on the "Clone the repo!" button.
+
+    ![](figures/gitkraken_clone2.png){fig-align="center"}
+
+8.  If a pop-up appears asking you whether to open the `dsip` repository, go ahead and click on the "Open Now" button.
+:::
+
+So far, we've set up two different GitHub repositories. Next, we will go over how to interact/make changes to these repositories and to push these changes to GitHub.
+
+## A typical GitHub workflow
+
+![](figures/github_workflow.png){fig-align="center" color="black"}
+
+A typical GitHub workflow involves the following four commands:
+
+1.  First, `git pull` to download changes from the remote GitHub repository to your local computer
+2.  After making changes to your local repository, `git add` files that you'd like to stage for your next commit
+3.  Next, `git commit` to store a "snapshot" of these added changes in your git version history
+4.  Finally, `git push` to upload these local changes to the remote GitHub repository
+
+To see this workflow in action, let's make a minor change to our `dsip` repository. In particular, let's create a new text file called `info.txt` that contains the following two lines:
+
+``` raw
+name = "Your Name"
+github_name = "Your GitHub Username"
+```
+
+Please place this `info.txt` file in your `dsip` folder (i.e., the file path should be `dsip/info.txt`).
+
+Let's now go through the four steps of the GitHub workflow. We will look at the equivalent commands using terminal, GitHub Desktop, and GitKraken side-by-side.
+
+::: {.columns .column-page}
+::: {.column width="31%"}
+### Terminal {.unnumbered}
+
+0.  **Navigate to the desired repository** (i.e., your `dsip` repository):
+
+``` bash
+cd path/to/dsip
+```
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+### GitHub Desktop {.unnumbered}
+
+0.  **Navigate to the desired repository** (i.e., your `dsip` repository):
+
+    Click on the top left where it says "Current Repository" and select your `dsip` repository (if not already selected).
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+### GitKraken {.unnumbered}
+
+0.  **Navigate to the desired repository** (i.e., your `dsip` repository):
+
+    Open your `dsip` repository in GitKraken (e.g., using the "Browse for a repo" button).
+:::
+:::
+
+::: {.columns .column-page}
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+1.  **To pull**:
+
+``` bash
+git pull
+```
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+1.  **To pull**:
+
+    Click on the "Fetch origin" button (at the top). If there are any changes on the remote, this button will change to "Pull origin". Click on the "Pull origin" button.
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+1.  **To pull**:
+
+    Click on the "Pull" button at the top of the application.
+:::
+
+> Recall: "pulling" is the process of downloading changes from the remote GitHub repository to your local computer.
+:::
+
+::: {.columns .column-page}
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+2.  **To add modified/new files to staging area**:
+
+``` bash
+git add info.txt
+```
+
+> You may want to check the status of your git repository using `git status` to see which files have been modified and/or added to the staging area. It is common to run `git status` before and/or after each step of this workflow when first learning git.
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+2.  **To add modified/new files to staging area**:
+
+    Check the box next to the file(s) that you want to add to the staging area.
+
+    ![](figures/gh_desktop_add.png){fig-align="center"}
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+2.  **To add modified/new files to staging area**:
+
+    Click on the "Stage File" button next to the file(s) that you want to add to the staging area.
+
+    ![](figures/gitkraken_add.png){fig-align="center"}
+
+    Once you click on "Stage File", this will move the file(s) from the "Unstaged Files" section to the "Staged Files" section.
+:::
+:::
+
+::: {.columns .column-page}
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+3.  **To commit staged files** (with message/description):
+
+``` bash
+git commit -m "add info.txt"
+```
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+3.  **To commit staged files** (with message/description):
+
+    Add a commit message to the text input field next to your GitHub icon. Once you are satisfied with the message, click on the "Commit to main" button.
+
+    ![](figures/gh_desktop_commit.png){fig-align="center"}
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+3.  **To commit staged files** (with message/description):
+
+    Add a commit message to the "Commit summary" field. Once you are satisfied with the message, click on the "Commit changes" button.
+
+    ![](figures/gitkraken_commit.png){fig-align="center"}
+:::
+
+> Tip: It is good practice to keep your commits modular and focused (e.g., they should address one bug or add one feature to your code). This will make it easier to track version changes and to revert back to previous versions if needed. To help facilitate this, you should also try to write informative commit messages that describe the changes you made in the commit.
+:::
+
+::: {.columns .column-page}
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+4.  **To push**:
+
+``` bash
+git push
+```
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+4.  **To push**:
+
+    Click on the "Push origin" button (at the top).
+
+    ![](figures/gh_desktop_push.png){fig-align="center"}
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+
+------------------------------------------------------------------------
+
+4.  **To push**:
+
+    Click on the "Push" button at the top of the application. After you click on "Push", the head of the local repository (computer icon) and the head of the remote repository (your GitHub icon) should be aligned at the same commit.
+
+    ![](figures/gitkraken_push.png){fig-align="center"}
+:::
+
+> Recall: "pushing" is the process of uploading changes from your local computer to the remote GitHub repository. If you do not push your changes, they will not be reflected on GitHub and not accessible to collaborators.
+:::
+
+------------------------------------------------------------------------
+
+Lastly, please add `tiffanymtang` as a collaborator in your `dsip` repository (so that I can view your lab submissions). To do this, please:
+
+1.  Go to your `dsip` repository on GitHub: [https://github.com/{your_github_username}/dsip](https://github.com/\%7Byour_github_username\%7D/dsip){.uri}
+2.  Go to Settings (on the top) \> Collaborators (on the left) \> Add people (the green button) \> Enter `tiffanymtang` \> Click on "Add tiffanymtang to this repository".
+
+
+# Reproducible Environment Walkthrough
+
+In this section, we will create a reproducible environment for your lab 1 using `renv` (for R users) and `conda` (for Python users). To get started, let's first initialize your `lab1/` directory.
+
+(Before proceeding, please ensure that you have pulled the latest version of the `dsip-s25` repository to your computer.)
+
+1. Navigate to your `dsip` repository on your computer.
+2. Create a new subdirectory of `dsip` called `lab1/`.
+3. Copy and paste the contents of the `lab1/` directory from the `dsip-s25` repository to your `dsip/lab1/` directory.
+4. Download the `lab1/data/` folder from Canvas. This directory contains all of the data files that you will need for lab 1. Place this `data/` folder under your `dsip/lab1/` directory.
+
+At this point, your `dsip` folder should look something like this:
+
+![](figures/lab1_directory.png){fig-align="center" width="50%"}
+
+Next, we are going to initialize a reproducible environment for your lab 1. We will be using `renv` for R users and `conda` for Python users.
+
+## Setting up `renv` for R users
+
+1. **Open R project**: Open the `dsip/lab1/lab1.Rproj` file. This should open up RStudio with the `lab1/` directory as your current project and current working directory.
+    
+> Note: for future labs, you might not be given an R project file to start. In that case, you would need to *create* an R project for that particular lab. To do this, open RStudio > click on File > New Project > Existing Directory > navigate to the directory of the lab you are working on (e.g., `lab2/`).
+
+> Note: It is best practice to have a separate R project for each lab that you work on. `renv` environments typically accompany an R project, and thus, creating a new R project for each lab will make it easier to manage the different packages needed for each lab.
+    
+2. **Install `renv`**: In the R console, run the following command to install the `renv` package:
+``` r
+install.packages("renv")
+```
+    
+You will only need to do this once.
+    
+3. **Initialize `renv`**: In the R console, run the following command to initialize an `renv` for your project:
+``` r
+renv::init()
+```
+    
+> Since we already have R code in our project (see .R files in `R/` folder), `renv` will do its best to automatically detect and install the packages that are being used in your project. 
+    
+> When you initialize `renv`, you will see a new `renv.lock` file and a new `renv/` directory in your project directory (i.e., `dsip/`).  The `renv/` directory contains symbolic links to all of the packages needed/used in your project. [Rather than installing a new copy of the package for every `renv` that you might create, `renv` uses symbolic links that point to your main R package library to save on storage]. The `renv.lock` file (also called the "lockfile") contains all of the necessary package information to exactly reproduce your R environment on a different computer. 
+
+![](figures/renv_init.png){fig-align="center" width="50%"}
+
+4. **Adding packages**: As you work on your lab, you may need to install new packages. To do install/use these in your `renv`, you can install them by running the following command in your R console:
+``` r
+renv::install("package_name")
+```
+e.g,
+``` r
+renv::install("skimr")
+```
+
+5. **Snapshot your environment**: After you have installed the necessary packages for your lab, you need to "snapshot" your environment, that is, to record the latest package information in your `renv.lock` lockfile. To do this, run the following command in your R console:
+``` r
+renv::snapshot()
+```
+
+> To see which packages are being used in your project but not yet installed or snapshotted in the lock file, you can run the following command in your R console: `renv::status()`.
+
+***
+
+To reproduce your exact R environment on a different computer:
+
+1. **Clone your `dsip` repository** to the new computer.
+2. **Open the R project**: Open the `lab1.Rproj` file in RStudio.
+3. **Install `renv`**: If you haven't already installed `renv` on the new computer, you can do so by running the following command in your R console:
+``` r
+# This will only need to be done once
+install.packages("renv")
+```
+
+4. **Restore your environment**: To restore your R environment to the exact state that it was in when you last worked on it, you can run the following command in your R console:
+``` r
+renv::restore()
+```
+
+## Setting up `conda` for Python users
+
+0. **Navigate to your `lab1/` directory**: Open your terminal and navigate to your `lab1/` directory, e.g.,
+``` bash
+cd path/to/dsip/lab1
+```
+
+1. **Create a conda environment**: To create a conda environment for your lab 1, run the following command in your terminal:
+``` bash
+conda create --name dsip_lab1
+```
+
+> Note: you can create a conda environment with specific versions of Python, packages, and other settings. More information on how to do this can be found in the [conda documentation](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
+
+2. **Activate the conda environment**: To activate the conda environment, run the following command in your terminal:
+``` bash
+conda activate dsip_lab1
+```
+
+> If you run into an error when trying to activate the conda environment, you may need to run the following command to initialize conda in your shell: `conda init` (or or `conda init zsh` if you are using zsh).
+
+3. **Install packages**: You can install packages in your conda environment using the `conda install` command. For example, the starter python code in `dsip/lab1/python/` uses the `pandas` and `statsmodels` packages. To install these packages, you can run the following command in your terminal:
+``` bash
+conda install pandas statsmodels
+```
+
+> To see which packages are installed in your conda environment, you can run the following command in your terminal: `conda list`.
+
+4. **Export environment**: After you have installed the necessary packages for your lab, you should export your conda environment to a YAML file. This YAML file contains a list of the packages that were installed in your conda environment. To do this, run the following command in your terminal:
+``` bash
+conda env export --from-history > environment.yml
+```
+
+> Note: the `--from-history` flag will only export the packages that you have explicitly installed in your environment (i.e., it will not include packages that were installed as dependencies of other packages). Be sure to include the `--from-history` flag when exporting your environment to ensure that you have a minimal environment file. If you exclude the `--from-history` flag, you will get a full list of all packages in your environment, including dependencies which may be specific to your operating system and will not be portable to other operating systems.
+
+5. **Create conda lock file**: While the above `environment.yml` file is great for sharing your environment with others, it does not provide instructions to *exactly* reproduce your environment across different operating system platforms. To enable exact reproducibility of our conda environment, we need to create a lock file (as we did with `renv`). To create a lock file for your conda environment, you can run the following command in your terminal:
+
+``` bash
+conda install conda-lock
+conda lock
+```
+
+***
+
+To reproduce your exact Python environment on a different computer:
+
+1. **Clone your `dsip` repository** to the new computer.
+2. **Navigate to your `lab1/` directory**: Open your terminal and navigate to your `lab1/` directory.
+3. **Install conda-lock**: If you haven't already installed `conda-lock` on the new computer, you can do so by running the following command in your terminal:
+``` bash
+# This only needs to be done once
+conda install conda-lock
+```
+4. **Restore your environment**: To restore your Python environment using the conda-lock file, you can run the following command in your terminal:
+``` bash
+conda-lock install --name dsip_lab1
+```
+
+# Using `quarto`
+
+Lastly, as part of lab 1, you will be creating a reproducible report. This can be done using various tools such as R markdown, Jupyter notebooks, and quarto. For this walkthrough, we will be using `quarto` to create a reproducible report for your lab 1 since it can be easily used, regardless of whether you are using R or Python.
+
+If you are using R/RStudio, using `quarto` is fairly straightforward and similar to using R Markdown, so we will not dwell on this. Instead, in what follows, we will go through how to use `quarto` in VS Code.
+
+0. **Open VS Code and install `quarto` extension in VS Code**: Open VS Code and go to the Extensions view by clicking on the square icon on the left sidebar or pressing `Ctrl+Shift+X` (`Cmd+Shift+X` on Mac). Search for "Quarto" and click on the install button. (This step only needs to be done once.)
+
+1. **Open relevant folder/files**: Open `lab1/` folder in VS Code (e.g., going to File > Open Folder...). Then open `lab1/notebooks/lab1_python.qmd` file.
+
+2. **Select python interpreter**: We need to choose the python interpreter that we want to use for our `quarto` document. To do this, we need to open the Command Palette by pressing `Ctrl+Shift+P` (`Cmd+Shift+P` on Mac) and then search for "Python: Select Interpreter". You can then choose the conda environment that you created for lab 1 (e.g., `dsip_lab1`).
+
+3. **Try running a code cell**: To run a code cell in your `quarto` document, you can click on the "Run Cell" button that appears above the code cell. Alternatively, you can use the keyboard shortcut `Ctrl+Enter` (`Cmd+Enter` on Mac).
+
+![](figures/vs_quarto.png){fig-align="center"}
+
+> VS Code may prompt you to install the `ipykernel` package. If you see this prompt, go ahead and install the `ipykernel` package. If you do not see this prompt, you may need to manually install the `ipykernel` package in your conda environment by running the following command in your terminal: `conda install ipykernel`. Be sure to run this command in a terminal where your `dsip_lab1` conda environment has been **activated**. If you are unsure which conda environment is currently activated, you can check by running `conda env list`. The `*` next to an environment indicates that it is the currently activated environment.
+
+4. **Render quarto document**: To render/preview your `quarto` document (e.g., to an HTML file), you can click on the "Preview" button that appears at the top right of the quarto document (it looks like a square document icon). 
+
+> When you try rendering the first time, you will probably run into an error that either says "No module named 'yaml'" or "No module named 'nbformat'". To fix this, you will need to install the jupyterlab package in your conda environment. To do this, you can run the following command in your terminal: `conda install jupyterlab`. Be sure to run this command in a terminal where your `dsip_lab1` conda environment has been **activated**. It may be easiest to run this command in the terminal used to preview your quarto document (i.e., the terminal that ran/showed the error). After installing `jupyterlab`, you should be able to successfully render/preview your quarto document. If you are unsure which conda environment is currently activated, you can check by running `conda env list`. The `*` next to an environment indicates that it is the currently activated environment.
+
+After going through this process, it is highly likely that you have installed new packages (e.g., `jupyterlab` and/or `ipykernel`) in your conda environment. Remember to update your `environment.yml` and `conda-lock.yml` files by repeating steps 4 and 5 in the "Setting up `conda` for Python users" section. That is,
+
+``` bash
+conda env export --from-history > environment.yml
+conda lock
+```
+
+# Pushing your changes to GitHub
+
+As you are working through your lab 1, it is best practice to frequently push your changes to your GitHub repository. This will ensure that your work is backed up and that you can easily revert to previous versions if needed. Given all of the setup that we've done in this walkthrough, now is a good time to make a commit and push your changes to your `dsip` repository on GitHub.
+
+But first, let's see all of the changes that we've made to our repository and are waiting to be committed and pushed. To do this, we can use any of the usual tools (terminal, GitHub Desktop, and GitKraken):
+
+::: {.columns .column-page}
+::: {.column width="31%"}
+### Terminal {.unnumbered}
+
+``` bash
+git status
+```
+
+![](figures/terminal_status.png){fig-align="center"}
+
+> Note: the output of `git status` looks quite different and cleaner compared to GitHub Desktop and GitKraken. This is a bit deceiving -- the new files that we've created in the `lab1/` directory are essentially collapsed under the `lab1/` directory in the terminal output.
+
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+### GitHub Desktop {.unnumbered}
+
+![](figures/gh_desktop_status.png){fig-align="center"}
+:::
+
+::: {.column width="3%"}
+:::
+
+::: {.column width="31%"}
+### GitKraken {.unnumbered}
+
+![](figures/gitkraken_status.png){fig-align="center"}
+:::
+
+:::
+
+
+By checking the status of our repository, we see that there are some "junk" files that should not be tracked or committed. For example, the `.DS_Store` file is a hidden file that is created by macOS and should not be tracked. We can instruct git to ignore these files by creating a `.gitignore` file in our repository. This file contains a list of files and directories that we want git to ignore and never track.
+
+If you followed the R parts of this walkthrough, then a `.gitignore` file has already been created automatically (by `renv`). To find this file in your file manager, you will need to show hidden files (i.e., any files that start with `.`). To reveal hidden files in your file manager, you can press `Ctrl+Shift+.` (or `Cmd+Shift+.` on Mac). If a `.gitignore` has not yet been created, you can create one manually by opening your favorite text editor and saving an empty file with the name `.gitignore`.
+
+To add the `.DS_Store` file to the `.gitignore` file, you can open the `.gitignore` file in your text editor and add the following line:
+``` raw
+*.DS_Store
+```
+
+> Note: the `*` is a wildcard character that matches any sequence of characters. So `*.DS_Store` will match any file that ends with `.DS_Store`, and thus, adding the above line to your `.gitignore` will tell git to ignore all files that end in the extension `.DS_Store`.
+
+Some other files/folders that you should add to your `.gitignore` file include:
+``` raw
+*/data/*
+*__pycache__*
+*.ipynb_checkpoints*
+```
+
+- Please do not upload the data to GitHub due to file size constraints!
+- `__pycache__` and `.ipynb_checkpoints` are files/folders that are automatically generated by python when compiling python code and running notebooks, respectively. These do not need to be tracked and just increase the amount of clutter in your repository.
+
+After these changes, your `.gitignore` file should look something like this:
+
+![](figures/gitignore.png){fig-align="center"}
+
+Please save these changes to your `.gitignore` file. After saving these changes, you can check the status of your repository again to see that many of the files that you previously saw (e.g., .DS_Store, the data files, ...) are no longer being tracked by git. 
+
+Take one last moment to review all of the files remaining in your `git status` (or GitHub Desktop/GitKraken status view) are files that you'd like to commit and push to your GitHub repository. If you are satisfied with the files that you see, you can now proceed through the usual GitHub workflow of pulling, adding, committing, and pushing your changes to your GitHub repository.
+
+# Unsupervised Learning
+
+```{r setup, include=FALSE}
+# set seed
+set.seed(331)
+```
+
+The goal of this unsupervised learning segment is two-fold:
+
+1.  To provide a self-contained introduction/tutorial on popular dimension
+    reduction and clustering methods, and
+2.  To demonstrate how to implement these methods in R and Python
+
+Throughout this section, we will be using a `presidential_speech` dataset --- a
+dataset containing log-transformed word counts from important speeches by U.S.
+presidents. More specifically, the dataset contains the top 75 most variable
+log-transformed word counts for each US president aggregated over several
+speeches (Inaugural, State of the Union, etc.). This dataset was taken from the
+[`clustRviz`](https://github.com/DataSlingers/clustRviz) R package. For
+visualization purposes, we have also created a `pres_period` dataset that
+indicates the historical period of each U.S. president (i.e., founding fathers,
+pre-Civil War, pre-WWII, or modern).
+
+### Loading in the data {.unnumbered}
+
+::: panel-tabset
+#### R
+
+```{r data}
+DATA_DIR <- file.path("unsupervised_learning", "data")
+pres_speech <- data.table::fread(
+  file.path(DATA_DIR, "pres_speech.csv")
+) |> 
+  tibble::column_to_rownames("V1") |> 
+  as.data.frame()
+pres_period <- read.csv(
+  file.path(DATA_DIR, "pres_period.csv")
+)$x
+
+head(pres_speech[, 1:6])
+```
+
+#### Python
+
+```{python}
+import pandas as pd
+from os.path import join as oj
+
+DATA_DIR = oj("unsupervised_learning", "data")
+pres_speech = pd.read_csv(oj(DATA_DIR, "pres_speech.csv"), index_col=0)
+pres_period = pd.read_csv(oj(DATA_DIR, "pres_period.csv"))["x"]
+
+pres_speech.head()
+```
+:::
+
+### Plotting helper functions {.unnumbered}
+
+Before jumping in, let us also create some plotting helper functions that we
+will use throughout this notebook.
+
+::: panel-tabset
+#### R
+
+```{r}
+#| code-fold: true
+plot_scatter <- function(X, components = 1:2,
+                         color = NULL, labels = NULL,
+                         point_size = 3, ...) {
+  if (length(components) == 2) {
+    # plot 2d scatter plot
+    x_var <- names(X)[components[1]]
+    y_var <- names(X)[components[2]]
+    if (is.null(color)) {
+      if (!is.null(labels)) {
+        plt <- X |>
+          dplyr::mutate(.label = labels) |>
+          ggplot2::ggplot() +
+          ggplot2::aes(
+            x = .data[[x_var]], y = .data[[y_var]], label = .label
+          )
+      } else {
+        plt <- X |>
+          ggplot2::ggplot() +
+          ggplot2::aes(
+            x = .data[[x_var]], y = .data[[y_var]]
+          )
+      }
+    } else {
+      if (!is.null(labels)) {
+        plt <- X |>
+          dplyr::mutate(.label = labels) |>
+          dplyr::bind_cols(.color = color) |>
+          ggplot2::ggplot() +
+          ggplot2::aes(
+            x = .data[[x_var]], y = .data[[y_var]], 
+            color = .color, label = .label
+          )
+      } else {
+        plt <- X |>
+          dplyr::bind_cols(.color = color) |>
+          ggplot2::ggplot() +
+          ggplot2::aes(
+            x = .data[[x_var]], y = .data[[y_var]], color = .color
+          )
+      }
+    }
+    if (!is.null(labels)) {
+      plt <- plt +
+        ggplot2::geom_text(size = point_size)
+    } else {
+      plt <- plt +
+        ggplot2::geom_point(size = point_size)
+    }
+  } else {
+    # plot pair plot
+    plt <- ggwrappers::plot_pairs(
+      X,
+      columns = components,
+      color_lower = color,
+      point_size = point_size
+    )
+  }
+  plt <- plt +
+    ggplot2::labs(color = "Period") +
+    ggplot2::theme_minimal(...)
+  return(plt)
+}
+```
+
+#### Python
+
+```{python}
+#| code-fold: true
+import matplotlib.pyplot as plt
+import numpy as np
+
+def plot_scatter(X, components=[0, 1], color=None, labels=None, point_size=3, fontsize=8):
+  colormap = {'Founding Fathers': '#F8766D', 'Modern': '#7CAE00', 'Pre-Civil War': '#00BFC4', 'Pre-WW2': '#C77CFF'}
+  color = pres_period.map(colormap)
+  if len(components) == 2:
+    # plot 2d scatter plot
+    x_var = X.columns[components[0]]
+    y_var = X.columns[components[1]]
+    if color is None:
+      if labels is not None:
+        plt.scatter(X[x_var], X[y_var], s=0)
+        for i in range(X.shape[0]):
+          plt.text(X[x_var][i], X[y_var][i], labels[i], fontsize=fontsize)
+      else:
+        plt.scatter(X[x_var], X[y_var], s=point_size)
+    else:
+      if labels is not None:
+        plt.scatter(X[x_var], X[y_var], s=0)
+        for i in range(X.shape[0]):
+          plt.text(X[x_var][i], X[y_var][i], labels[i], c=color[i], fontsize=fontsize)
+      else:
+        plt.scatter(X[x_var], X[y_var], c=color, s=point_size)
+    plt.xlabel(x_var)
+    plt.ylabel(y_var)
+    plt.legend()
+  else:
+    # plot pair plot
+    pd.plotting.scatter_matrix(X, c=color, s=point_size)
+  plt.show()
+    
+```
+:::
+
+## Dimension Reduction
+
+### Principal Components Analysis (PCA)
+
+**Principal Components Analysis** (PCA) aims to find a lower-dimensional
+(linear) projection of the data that captures as much of the **variance** in the
+data as possible. The first principal component is the direction in which the
+data varies the most, the second principal component is the direction that
+captures the most variance after accounting for the first principal component,
+and so on.
+
+More formally, given data $\mathbf{X} \in \mathbb{R}^{n \times p}$, the $j^{th}$
+principal component, denoted $\mathbf{v}_j$, solves the following optimization
+problem:
+
+```{=tex}
+\begin{align*}
+\hat{\mathbf{v}}_j = \underset{\mathbf{v} \in \mathbb{R}^p}{\operatorname{argmax}} \;\; \operatorname{Var}(\underbrace{\mathbf{X}\mathbf{v}}_{\substack{\text{projection}\\ \text{of data } X\\ \text{ onto}\\\text{direction } \mathbf{v}}}) \quad \text{subject to} \quad \underbrace{\lVert \mathbf{v} \rVert_2^2 = 1, \; \mathbf{v}^T\hat{\mathbf{v}}_i = 0 \; \text{ for } i = 1, \ldots, j-1.}_{\text{constrained to be orthogonal to all previous PCs}}
+\end{align*}
+```
+In words, we want to find the principal component (or direction)
+$\hat{\mathbf{v}}_j$ such that when we project the data $\mathbf{X}$ onto this
+direction, the variance of the projected data is maximized. Moreover, we want to
+do this while ensuring that the direction $\mathbf{v}_j$ is scaled to have unit
+length (i.e., $\lVert \hat{\mathbf{v}}_j \rVert_2^2 = 1$) and is orthogonal to
+all previous principal components (i.e.,
+$\hat{\mathbf{v}}_j^T\hat{\mathbf{v}}_i = 0$ for $i = 1, \ldots, j-1$).
+
+#### Connection between PCA and SVD {.unnumbered}
+
+Though this optimization problem may look complicated, it turns out that the
+solution to this problem is actually given by the singular vector decomposition
+(SVD) of the data matrix $\mathbf{X}$. To make this connection, let's write out
+the SVD of $\mathbf{X}$ as:
+
+```{=tex}
+\begin{align*}
+\mathbf{X} = \mathbf{U} \mathbf{D} \mathbf{V}^T,
+\end{align*}
+```
+where
+$\mathbf{U} = [\mathbf{u}_1, \ldots, \mathbf{u}_n] \in \mathbb{R}^{n \times n}$
+and
+$\mathbf{V} = [\mathbf{v}_1, \ldots, \mathbf{v}_p] \in \mathbb{R}^{p \times p}$
+are orthogonal matrices whose columns are the left and right singular vectors of
+$\mathbf{X}$, respectively, and
+$\mathbf{D} = \text{diag}(d_1, \ldots, d_{\min\{n, p\}}) \in \mathbb{R}^{n \times p}$
+is a diagonal matrix whose diagonal entries are the singular values of
+$\mathbf{X}$.
+
+While we won't prove it here, it can be shown that the $j^{th}$ principal
+component of $\mathbf{X}$ is equal to the $j^{th}$ right singular vector of
+$\mathbf{X}$, i.e., $\hat{\mathbf{v}}_j = \mathbf{v}_j$. Since the $j^{th}$
+principal component score is the projection of $\mathbf{X}$ onto the $j^{th}$
+principal component $\hat{\mathbf{v}}_j$, it then follows that the $j^{th}$
+principal component score is equal to
+$\mathbf{X} \hat{\mathbf{v}}_j = \mathbf{X} \mathbf{v}_j = \mathbf{U} \mathbf{D} \mathbf{V}^T \mathbf{v}_j = d_j \mathbf{u}_j$.
+Moreover, the variance explained by the $j^{th}$ principal component is equal to
+$d_j^2$, and the proportion of variance explained by the $j^{th}$ principal
+component is equal to $\frac{d_j^2}{\sum_i d_i^2}$.
+
+In particular, the first principal component direction (i.e., the direction that
+explains the most variance in the data) is given by the first right singular
+vector of $\mathbf{X}$, and the first principal component score is given by the
+first left singular vector of $\mathbf{X}$ scaled by the first singular value.
+
+This connection between PCA and SVD is important because it allows us to quickly
+compute all of the principal components in one go (by computing the full SVD of
+$\mathbf{X}$). Moreover, this is a global and unique solution to the PCA problem
+(assuming that the data matrix $\mathbf{X}$ is not degenerate to begin with).
+
+#### Summary {.unnumbered}
+
+-   PCA is a linear dimension reduction method that aims to find a
+    lower-dimensional representation of the data that preserves as much of the
+    variance in the data as possible.
+-   PCA can be solved by computing the singular value decomposition (SVD) of the
+    data matrix $\mathbf{X}$ (for which there are very fast and well-studied
+    algorithms).
+
+#### Implementation {.unnumbered}
+
+::: panel-tabset
+##### R
+
+```{r}
+pca_out <- prcomp(pres_speech)
+scores <- as.data.frame(pca_out$x)
+plot_scatter(
+  scores, color = pres_period, labels = rownames(pres_speech)
+)
+```
+
+To further interpret the PCA results, we can look at two more things:
+
+1.  The **principal component loadings** (i.e., the weights of each feature
+    in each principal component):
+
+    ```{r}
+    loadings <- as.data.frame(pca_out$rotation)
+    head(loadings[, 1:4])
+    ```
+
+    which we might want to sort by their magnitude to see which features (in
+    this case, words) are most important in each principal component, e.g., for
+    PC1:
+
+    ```{r}
+    loadings |> 
+      tibble::rownames_to_column("word") |> 
+      dplyr::mutate(
+        rank = rank(-abs(PC1)),
+        PC1 = sprintf("%s (%.2f)", word, PC1)
+      ) |> 
+      dplyr::arrange(rank) |> 
+      dplyr::select(rank, PC1) |> 
+      head()
+    ```
+
+```{=html}
+<!-- -->
+```
+2.  The **proportion of variance explained** by each principal component:
+
+    ```{r}
+    var_explained <- pca_out$sdev^2 / sum(pca_out$sdev^2)
+    ```
+
+    which we can visualize in a scree plot:
+
+    ```{r}
+    data.frame(
+      PC = seq_along(var_explained),
+      cum_var_explained = cumsum(var_explained)
+    ) |> 
+      ggplot2::ggplot() +
+      ggplot2::aes(x = PC, y = cum_var_explained) +
+      ggplot2::geom_point() +
+      ggplot2::geom_line() +
+      ggplot2::labs(
+        x = "Number of Components",
+        y = "Cumulative Proportion of Variance Explained"
+      ) +
+      ggplot2::theme_minimal()
+    ```
+
+##### Python
+
+```{python}
+from sklearn.decomposition import PCA
+
+pca = PCA()
+scores = pd.DataFrame(pca.fit_transform(pres_speech))
+scores.columns = [f"PC{i+1}" for i in range(scores.shape[1])]
+plot_scatter(
+  scores, color=pres_period, labels=pres_speech.index
+)
+```
+
+To further interpret the PCA results, we can look at two more things:
+
+1.  The **principal component loadings** (i.e., the weights of each feature
+    in each principal component):
+
+    ```{python}
+    loadings = pd.DataFrame(pca.components_.T)
+    loadings
+    ```
+
+    which we might want to sort by their magnitude to see which features (in
+    this case, words) are most important in each principal component, e.g., for
+    PC1:
+
+    ```{python}
+    loadings["word"] = pres_speech.columns
+    loadings["rank"] = loadings[0].abs().rank(ascending=False)
+    loadings = loadings.rename(columns={0: "PC1"})
+    loadings[["rank", "word", "PC1"]].sort_values("rank").head()
+    ```
+
+```{=html}
+<!-- -->
+```
+2.  The **proportion of variance explained** by each principal component:
+
+    ```{python}
+    var_explained = pca.explained_variance_ratio_
+    ```
+
+    which we can visualize in a scree plot:
+
+    ```{python}
+    plt.plot(np.cumsum(var_explained), marker="o")
+    plt.xlabel("Number of Components")
+    plt.ylabel("Cumulative Proportion of Variance Explained")
+    plt.show()
+    ```
+
+:::
+
+### Multidimensional Scaling (MDS)
+
+Multidimensional scaling (MDS) aims to find a lower-dimensional representation
+of the data that preserves the **pairwise distances** between data points as
+much as possible.
+
+Given data $\mathbf{X} \in \mathbb{R}^{n \times p}$ and a pre-specified choice
+of the number of dimensions $r$, MDS solves the following optimization problem:
+
+```{=tex}
+\begin{align*}
+\hat{\mathbf{Z}} = \underset{\mathbf{Z} \in \mathbb{R}^{n \times r}}{\operatorname{argmin}} \;\; \sum_{i \neq j} \big( \underbrace{\lVert \mathbf{x}_i - \mathbf{x}_j \rVert_2}_{\substack{\text{distance between }\\\text{points } i \text{ and } j \\\text{ in \textbf{original space}}}} - \underbrace{\lVert \mathbf{z}_i - \mathbf{z}_j \rVert_2}_{\substack{\text{distance between }\\\text{points } i \text{ and } j \\\text{ in \textbf{low-dim space}}}} \big)^2,
+\end{align*}
+```
+In words, MDS tries to find a new set of points
+$\hat{\mathbf{Z}} \in \mathbb{R}^{n \times r}$ in the lower $r$-dimensional
+space such that the pairwise Euclidean distances between the points in the
+lower-dimensional space are similar to the original distances.
+
+Note that MDS can be applied to scenarios where we don't have direct access to
+the data $\mathbf{X}$, but we have access to the pairwise distances between the
+data points $D_{ij} = \lVert \mathbf{x}_i - \mathbf{x}_j \rVert_2$. In this
+case, we can use the pairwise distance matrix
+$\mathbf{D} \in \mathbb{R}^{n \times n}$, where
+$D_{ij} = \lVert \mathbf{x}_i - \mathbf{x}_j \rVert_2$, as the input to MDS.
+There has also been numerous extensions of MDS, which allow for the use of other
+distance metrics in place of the Euclidean distance shown here.
+
+#### Summary {.unnumbered}
+
+-   MDS is a dimension reduction method that aims to find a lower-dimensional
+    representation of the data that preserves the pairwise distances between
+    data points.
+-   MDS is particular useful when we only have access to the pairwise distances
+    between data points (and not the actual data points themselves).
+
+#### Implementation {.unnumbered}
+
+::: panel-tabset
+##### R
+
+```{r}
+mds_out <- cmdscale(dist(pres_speech), k = 2)
+scores <- as.data.frame(mds_out) |> 
+  setNames(paste0("MDS", 1:ncol(mds_out)))
+plot_scatter(
+  scores, color = pres_period, labels = rownames(pres_speech)
+)
+```
+
+##### Python
+
+```{python}
+from sklearn.manifold import MDS
+
+mds = MDS(n_components=2)
+scores = pd.DataFrame(mds.fit_transform(pres_speech))
+scores.columns = [f"MDS{i+1}" for i in range(scores.shape[1])]
+plot_scatter(
+  scores, color=pres_period, labels=pres_speech.index
+)
+```
+:::
+
+### Independent Components Analysis (ICA)
+
+Whereas PCA decomposes the data into a set of orthogonal components, Independent
+Components Analysis (ICA) aims to decompose the data into **statistically
+independent** components.
+
+Given a (centered) data matrix $\mathbf{X} \in \mathbb{R}^{n \times p}$ and a
+pre-specified number of components $r$, ICA assumes that there exists a set of
+$r$ statistically independent ("source") components
+$\mathbf{S} \in \mathbb{R}^{n \times r}$ such that the data $\mathbf{X}$ can be
+represented as a linear combination of the statistically independent components
+$\mathbf{S}$. That is, ICA assumes that \begin{align*}
+\mathbf{X} = \mathbf{S} \mathbf{A},
+\end{align*} where $\mathbf{A} \in \mathbb{R}^{r \times p}$ is a mixing matrix
+(i.e., a set of linear weights). The goal of ICA then is to "un-mix" the data by
+estimating an un-mixing matrix $\mathbf{W} \in \mathbb{R}^{r \times r}$ such
+that \begin{align*}
+\mathbf{X} \mathbf{W} = \mathbf{S}.
+\end{align*} (If $\mathbf{A}$ were a square matrix, one could think of this
+$\mathbf{W}$ as something like an inverse matrix of $\mathbf{A}$.)
+
+Under these modeling assumptions, the Central Limit Theorem tells us that the
+signal in the data $\mathbf{X}$ will tend to be more Gaussian than the
+independent source components $\mathbf{S}$ (this is because $\mathbf{X}$ is a
+linear combination of these source components). Thus, ICA searches for an
+un-mixing matrix $\mathbf{W}$ that maximizes the non-Gaussianity of the source
+components $\mathbf{S}$.
+
+Note that ICA is known to be highly sensitive to noise. Thus, it is often
+recommended to apply ICA after first applying PCA.
+
+#### Summary {.unnumbered}
+
+-   ICA aims to decompose the data into a linear combination of statistically
+    independent source components.
+-   ICA is most effective when we believe that the underlying source signals are
+    highly non-Gaussian.
+    -   Consequently, ICA has been widely used and successful in signal
+        processing applications (e.g., the "cocktail" problem).
+
+#### Implementation {.unnumbered}
+
+::: panel-tabset
+##### R
+
+```{r}
+library(fastICA)
+
+ica_out <- fastICA::fastICA(pres_speech, n.comp = 2)
+scores <- as.data.frame(ica_out$S) |> 
+  setNames(paste0("IC", 1:ncol(ica_out$S)))
+plot_scatter(
+  scores, color = pres_period, labels = rownames(pres_speech)
+)
+```
+To further interpret the ICA results, we can also take a look at the mixing matrix $\mathbf{A} \in \mathbb{R}^{r \times p}$, which tells us how much each feature contributes to each independent component:
+
+```{r}
+mixing_matrix <- as.data.frame(ica_out$A)
+```
+
+which we might want to sort by their magnitude to see which features (in this case, words) are most important in each component, e.g., for the first IC:
+
+```{r}
+as.data.frame(t(mixing_matrix)) |> 
+  dplyr::mutate(
+    word = colnames(pres_speech),
+    rank = rank(-abs(V1)),
+    IC1 = sprintf("%s (%.2f)", word, V1)
+  ) |> 
+  dplyr::arrange(rank) |>
+  dplyr::select(rank, IC1) |> 
+  head()
+```
+
+##### Python
+
+```{python}
+from sklearn.decomposition import FastICA
+
+ica = FastICA(n_components=2)
+scores = pd.DataFrame(ica.fit_transform(pres_speech))
+scores.columns = [f"IC{i+1}" for i in range(scores.shape[1])]
+plot_scatter(
+  scores, color=pres_period, labels=pres_speech.index
+)
+```
+
+To further interpret the ICA results, we can also take a look at the mixing matrix $\mathbf{A} \in \mathbb{R}^{r \times p}$, which tells us how much each feature contributes to each independent component:
+
+```{python}
+mixing_matrix = pd.DataFrame(ica.mixing_)
+```
+
+which we might want to sort by their magnitude to see which features (in this case, words) are most important in each component, e.g., for the first IC:
+
+```{python}
+mixing_matrix["word"] = pres_speech.columns
+mixing_matrix["rank"] = mixing_matrix[0].abs().rank(ascending=False)
+mixing_matrix = mixing_matrix.rename(columns={0: "IC1"})
+mixing_matrix[["rank", "word", "IC1"]].sort_values("rank").head()
+```
+
+:::
+
+### Non-negative Matrix Factorization (NMF)
+
+Non-negative Matrix Factorization (NMF) is a dimension reduction method, which
+requires **non-negative data** as input, and aims to decompose the data into a
+linear combination of two low-rank matrices --- one capturing patterns in the
+sample/observation space (i.e., the "scores") and the other capturing patterns
+in the feature space (i.e., the "loadings").
+
+Formally, given a non-negative data matrix
+$\mathbf{X} \in \mathbf{R}^{n \times p}$ (i.e., each entry in $\mathbf{X}$ is
+non-negative) and given a pre-specified number of components $r$, NMF solves the
+optimization problem: \begin{align*}
+\hat{\mathbf{W}}, \hat{\mathbf{H}} = \underset{\mathbf{W} \geq 0, \mathbf{H} \geq 0}{\operatorname{argmin}} \;\; \lVert \mathbf{X} - \mathbf{W}\mathbf{H} \rVert_F^2,
+\end{align*} where $\hat{\mathbf{W}} \in \mathbb{R}^{n \times r}$ is the
+"scores" matrix and $\hat{\mathbf{H}} \in \mathbb{R}^{r \times p}$ is the
+"loadings" matrix.
+
+In other words, NMF tries to find two non-negative, low-rank matrices
+$\mathbf{W}$ and $\mathbf{H}$ such that their product approximates the original
+data matrix $\mathbf{X}$ as closely as possible, that is, \begin{align*}
+\mathbf{X} \approx \mathbf{W}\mathbf{H}.
+\end{align*} Moreover, we can interpret the columns of $\mathbf{W}$ as the
+"scores" of the data points in the lower-dimensional space (analogous to the PC
+scores) and the columns of $\mathbf{H}$ as the "loadings" of the features in the
+lower-dimensional space (analogous to the PC loadings).
+
+NMF is typically referred to as a "low-rank" approximation method. A low-rank
+approximation method is one that tries to simplify a complex data matrix (e.g.,
+$\mathbf{X}$) by approximating it with smaller/simpler/low-rank matrices (e.g.,
+$\mathbf{W}$ and $\mathbf{H}$).
+
+#### Summary {.unnumbered}
+
+-   NMF aims to find a low-rank approximation of the data matrix $\mathbf{X}$ by
+    factorizing it into two simpler matrices $\mathbf{W}$ (the sample scores)
+    and $\mathbf{H}$ (the feature loadings).
+-   NMF requires that the input data have all non-negative entries. Though this
+    can be a limitation, this also makes NMF particularly useful for data that
+    is inherently non-negative (e.g., word counts, image data, etc.) as it
+    exploits this special structure.
+
+#### Implementation {.unnumbered}
+
+::: panel-tabset
+##### R
+
+```{r}
+# note if you need to install NMF in renv, you may need to first install the Biobase R package via `renv::install("bioc::Biobase")`
+library(NMF)
+
+nmf_out <- NMF::nmf(pres_speech, rank = 2)
+scores <- as.data.frame(nmf_out@fit@W) |> 
+  setNames(paste0("NMF", 1:ncol(nmf_out@fit@W)))
+plot_scatter(
+  scores, color = pres_period, labels = rownames(pres_speech)
+)
+```
+
+To further interpret the NMF results, we can also take a look at the feature loadings matrix $\mathbf{H} \in \mathbb{R}^{r \times p}$, which tells us how much each feature contributes to each NMF component:
+
+```{r}
+h <- nmf_out@fit@H
+```
+
+which we might want to sort by their magnitude to see which features (in this case, words) are most important in each component, e.g., for the first NMF component:
+
+```{r}
+as.data.frame(t(h)) |> 
+  tibble::rownames_to_column("word") |>
+  dplyr::mutate(
+    rank = rank(-abs(V1)),
+    NMF1 = sprintf("%s (%.2f)", word, V1)
+  ) |> 
+  dplyr::arrange(rank) |>
+  dplyr::select(rank, NMF1) |> 
+  head()
+```
+
+##### Python
+
+```{python}
+from sklearn.decomposition import NMF
+
+nmf = NMF(n_components=2)
+scores = pd.DataFrame(nmf.fit_transform(pres_speech))
+scores.columns = [f"NMF{i+1}" for i in range(scores.shape[1])]
+plot_scatter(
+  scores, color=pres_period, labels=pres_speech.index
+)
+```
+
+To further interpret the NMF results, we can also take a look at the feature loadings matrix $\mathbf{H} \in \mathbb{R}^{r \times p}$, which tells us how much each feature contributes to each NMF component:
+
+```{python}
+h = pd.DataFrame(nmf.components_.T)
+```
+
+which we might want to sort by their magnitude to see which features (in this case, words) are most important in each component, e.g., for the first NMF component:
+
+```{python}
+h["word"] = pres_speech.columns
+h["rank"] = h[0].abs().rank(ascending=False)
+h = h.rename(columns={0: "NMF1"})
+h[["rank", "word", "NMF1"]].sort_values("rank").head()
+```
+
+:::
+
+### t-Distributed Stochastic Neighbor Embedding (tSNE)
+
+t-Distributed Stochastic Neighbor Embedding (tSNE) is a nonlinear dimension
+reduction method which aims to preserve the **local neighborhood structure** of
+the data.
+
+At a high-level, the idea behind tSNE is to model the pairwise similarities (or
+neighborhood structure) between data points in the high-dimensional space and
+the low-dimensional space. In particular, tSNE defines a probability
+distribution over pairs of data points in the high-dimensional space based on
+their similarities (e.g., based on the Euclidean distance between the data
+points). It then defines a similar probability distribution over pairs of data
+points in the low-dimensional space. The goal of tSNE is then to find the
+low-dimensional representation of the data that minimizes the difference between
+these two probability distributions.
+
+The details of how tSNE actually does this is perhaps too involved to present in
+this notebook. However, if you would like to learn more, here is a great
+[tutorial](https://www.dailydoseofds.com/formulating-and-implementing-the-t-sne-algorithm-from-scratch/).
+
+What's important to know for practical purposes:
+
+-   tSNE requires a pre-specified number of dimensions for the lower-dimensional
+    space. Typically, tSNE is run with 2 or 3 dimensions.
+-   Often, PCA is performed before running tSNE to reduce the dimensionality of
+    the data and to speed up the tSNE algorithm. This also helps tSNE to avoid
+    the "curse of dimensionality", which can be a major problem when computing
+    distances between points in high dimensions (as is done in the tSNE
+    algorithm).
+-   tSNE often does a great job at preserving the local structure of the data,
+    but sometimes at the cost of losing the global structure. In other words,
+    when interpreting a tSNE output, it is best practice to de-emphasize the
+    relative distance or position of points/clusters that are far apart from
+    each other.
+-   As part of tSNE's probability model, there is an important hyperparameter,
+    referred to as "perplexity", which acts like a bandwidth for how flexible
+    the tSNE embedding can be. This hyperparameter can substantially affect the
+    tSNE output.
+
+I would highly encourage you to check out this fantastic [blog
+post](https://distill.pub/2016/misread-tsne/) on tSNE which provides great
+intuition for how the hyperparameters of tSNE (e.g., perplexity) can affect the
+resulting embeddings. It also gives great insight into the tradeoff between
+preserving local and global structure in tSNE and how to best interpret the
+results.
+
+#### Summary {.unnumbered}
+
+-   tSNE is a nonlinear dimension reduction method, which aims to preserve the
+    probability distribution of neighboring points between the original space
+    and the lower-dimensional space.
+-   tSNE is often great at preserving the local structure of the data, but at
+    the cost of losing the global structure. This tradeoff is partially
+    controlled by the perplexity hyperparameter in tSNE.
+
+#### Implementation {.unnumbered}
+
+::: panel-tabset
+##### R
+
+```{r}
+library(Rtsne)
+
+tsne_out <- Rtsne::Rtsne(pres_speech, dims = 2, perplexity = 5)
+scores <- as.data.frame(tsne_out$Y) |> 
+  setNames(paste0("tSNE", 1:ncol(tsne_out$Y)))
+plot_scatter(
+  scores, color = pres_period, labels = rownames(pres_speech)
+)
+```
+
+##### Python
+
+```{python}
+from sklearn.manifold import TSNE
+
+tsne = TSNE(n_components=2, perplexity=5)
+scores = pd.DataFrame(tsne.fit_transform(pres_speech))
+scores.columns = [f"tSNE{i+1}" for i in range(scores.shape[1])]
+plot_scatter(
+  scores, color=pres_period, labels=pres_speech.index
+)
+```
+:::
+
+### Uniform Manifold Approximation and Projection (UMAP)
+
+Like tSNE, Uniform Manifold Approximation and Projection (UMAP) is a nonlinear
+dimension reduction method that aims to preserve the **local neighborhood
+structure** of the data. However, unlike tSNE, UMAP is generally thought to be
+better at preserving the **global structure** of the data (but not always).
+
+At a high-level, UMAP constructs a high-dimensional graph representation of the
+data, where each data point is connected to its nearest neighbors in the
+original space. UMAP then constructs a low-dimensional graph representation of
+the data and tries to preserve the graph structure between the high-dimensional
+and low-dimensional representations. The key idea behind UMAP is to find a
+low-dimensional representation of the data that minimizes the cross-entropy
+between the high-dimensional and low-dimensional graph representations.
+
+Again, the details of how UMAP actually does this is perhaps too involved to
+present in this notebook. (In fact, to rigorously present UMAP, we would need to
+introduce manifold learning and topological data analysis.) However, if you
+would like to learn more, here is a great and accessible
+[tutorial](https://umap-learn.readthedocs.io/en/latest/how_umap_works.html) on
+UMAP.
+
+What's important to know for practical purposes:
+
+-   UMAP requires a pre-specified number of dimensions for the lower-dimensional
+    space. Typically, UMAP is run with 2 or 3 dimensions.
+-   Often, PCA is performed before running UMAP to reduce the dimensionality of
+    the data and to speed up the UMAP algorithm. This also helps UMAP to avoid
+    the "curse of dimensionality", which can be a major problem when computing
+    distances between points in high dimensions (as is done in the UMAP
+    algorithm).
+-   UMAP has a few hyperparameters that can substantially affect the UMAP
+    output, including the "number of neighbors" to consider when constructing
+    the high-dimensional graph and the "minimum distance" hyperparameter which
+    controls the minimum distance between points in the low-dimensional space.
+    Like tSNE, the output of UMAP can change substantially based on these
+    hyperparameters.
+
+#### Summary {.unnumbered}
+
+-   UMAP is a nonlinear dimension reduction method based on manifold learning
+    and ideas from topological data analysis (like building neighborhood graph
+    representations).
+-   UMAP is generally thought to be better at preserving the global structure of
+    the data compared to tSNE.
+-   However, UMAP still depends on a few hyperparameters (like the number of
+    neighbors and the minimum distance) that can substantially affect the
+    output.
+
+#### Implementation {.unnumbered}
+
+::: panel-tabset
+##### R
+
+```{r}
+library(umap)
+
+umap_out <- umap::umap(
+  pres_speech, n_components = 2, n_neighbors = 15, min_dist = 0.1
+)
+scores <- as.data.frame(umap_out$layout) |> 
+  setNames(paste0("UMAP", 1:ncol(umap_out$layout)))
+plot_scatter(
+  scores, color = pres_period, labels = rownames(pres_speech)
+)
+```
+
+##### Python
+
+```{python}
+#| eval: false # somehow can't get this python chunk to run using reticulate when rendering quarto
+import umap
+
+umap_out = umap.UMAP(n_components=2, n_neighbors=15, min_dist=0.1)
+scores = pd.DataFrame(umap_out.fit_transform(pres_speech))
+scores.columns = [f"UMAP{i+1}" for i in range(scores.shape[1])]
+plot_scatter(
+  scores, color=pres_period, labels=pres_speech.index
+)
+```
+:::
+
+### Other Dimension Reduction methods
+
+Other popular dimension reduction methods that are not covered in this notebook
+but are of interest:
+
+-   Isomap
+-   Locally Linear Embedding (LLE)
+-   Autoencoders
+-   And many more...
