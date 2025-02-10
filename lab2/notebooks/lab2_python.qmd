@@ -1,0 +1,49 @@
+---
+title: "Lab 2 - Breast Cancer Subtyping"
+author: "Insert Name Here"
+date: today
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show Code"
+    code-tools: true
+    theme: sandstone
+    # theme: cerulean
+jupyter: python3
+execute: 
+  warning: false
+  message: false
+---
+
+```{python setup}
+import sys
+sys.path.append("..")
+
+from os.path import join as oj
+
+DATA_PATH = oj("..", "data")
+```
+
+# Exploratory Data Analysis
+
+# Dimension Reduction
+
+# Clustering
+
+Example code to save best breast cancer subtyping clustering results to a file:
+
+```{python}
+import pandas as pd
+import numpy as np
+
+RESULTS_PATH = oj("..", "results")
+
+# save best clustering results
+predicted_subtypes = pd.DataFrame({
+    'best_guess': np.random.choice([1, 2], 1043),  # e.g., if you think k = 2 is the best
+    'second_guess': np.random.choice([1, 2, 3], 1043)  # e.g., if you think k = 3 is the second best
+})
+if not os.path.exists(RESULTS_PATH):
+    os.makedirs(RESULTS_PATH)
+predicted_subtypes.to_csv(oj(RESULTS_PATH, "best_subtype_labels.csv"), index=False)
+```

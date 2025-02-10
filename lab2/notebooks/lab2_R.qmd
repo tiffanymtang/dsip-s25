@@ -1,0 +1,55 @@
+---
+title: "Lab 2 - Breast Cancer Subtyping"
+author: "Insert Name Here"
+date: today
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show Code"
+    code-tools: true
+    theme: sandstone
+    lightbox: true
+    # theme: yeti
+execute: 
+  warning: false
+  message: false
+---
+
+```{r setup, include=FALSE}
+# source all functions from R/ folder
+for (fname in list.files(here::here("R"), pattern = "*.R")) {
+  source(here::here(file.path("R", fname)))
+}
+
+# path to data
+DATA_PATH <- here::here("data")
+
+# set seed
+set.seed(331)
+```
+
+# Exploratory Data Analysis
+
+# Dimension Reduction
+
+# Clustering
+
+Example code to save best breast cancer subtyping clustering results to a file:
+
+```{r}
+RESULTS_PATH <- here::here("results")
+
+# save best clustering results
+predicted_subtypes <- tibble::tibble(
+  best_guess = sample(1:2, 1043, replace = TRUE),  # e.g., if you think k = 2 is the best
+  second_guess = sample(1:3, 1043, replace = TRUE),  # e.g., if you think k = 3 is the second best
+)
+if (!dir.exists(RESULTS_PATH)) {
+  dir.create(RESULTS_PATH)
+}
+write.csv(
+  predicted_subtypes, 
+  here::here(file.path(RESULTS_PATH, "best_subtype_labels.csv")), 
+  row.names = FALSE
+)
+```
