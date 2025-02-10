@@ -1,0 +1,853 @@
+---
+title: "Unsupervised Learning"
+author: "Prof. Tiffany Tang"
+date: today
+format: 
+  html:
+    code-fold: show
+    code-summary: "Show Code"
+    code-tools: true
+    theme: sandstone
+    lightbox: true
+    # theme: yeti
+    embed-resources: true
+toc: true
+number-sections: true
+execute: 
+  warning: false
+  message: false
+editor: 
+  markdown: 
+    wrap: 80
+---
+
+```{r setup, include=FALSE}
+# set seed
+set.seed(331)
+```
+
+# README
+
+The goal of this notebook is two-fold:
+
+1.  To provide a self-contained introduction/tutorial on popular dimension
+    reduction and clustering methods, and
+2.  To demonstrate how to implement these methods in R and Python
+
+Throughout this notebook, we will be using a `presidential_speech` dataset --- a
+dataset containing log-transformed word counts from important speeches by U.S.
+presidents. More specifically, the dataset contains the top 75 most variable
+log-transformed word counts for each US president aggregated over several
+speeches (Inaugural, State of the Union, etc.). This dataset was taken from the
+[`clustRviz`](https://github.com/DataSlingers/clustRviz) R package. For
+visualization purposes, we have also created a `pres_period` dataset that
+indicates the historical period of each U.S. president (i.e., founding fathers,
+pre-Civil War, pre-WWII, or modern).
+
+### Loading in the data {.unnumbered}
+
+::: panel-tabset
+#### R
+
+```{r data}
+DATA_DIR <- file.path("..", "data")
+pres_speech <- data.table::fread(
+  file.path(DATA_DIR, "pres_speech.csv")
+) |> 
+  tibble::column_to_rownames("V1") |> 
+  as.data.frame()
+pres_period <- read.csv(
+  file.path(DATA_DIR, "pres_period.csv")
+)$x
+
+head(pres_speech[, 1:6])
+```
+
+#### Python
+
+```{python}
+import pandas as pd
+from os.path import join as oj
+
+DATA_DIR = oj("..", "data")
+pres_speech = pd.read_csv(oj(DATA_DIR, "pres_speech.csv"), index_col=0)
+pres_period = pd.read_csv(oj(DATA_DIR, "pres_period.csv"))["x"]
+
+pres_speech.head()
+```
+:::
+
+### Plotting helper functions {.unnumbered}
+
+Before jumping in, let us also create some plotting helper functions that we
+will use throughout this notebook.
+
+::: panel-tabset
+#### R
+
+```{r}
+#| code-fold: true
+plot_scatter <- function(X, components = 1:2,
+                         color = NULL, labels = NULL,
+                         point_size = 3, ...) {
+  if (length(components) == 2) {
+    # plot 2d scatter plot
+    x_var <- names(X)[components[1]]
+    y_var <- names(X)[components[2]]
+    if (is.null(color)) {
+      if (!is.null(labels)) {
+        plt <- X |>
+          dplyr::mutate(.label = labels) |>
+          ggplot2::ggplot() +
+          ggplot2::aes(
+            x = .data[[x_var]], y = .data[[y_var]], label = .label
+          )
+      } else {
+        plt <- X |>
+          ggplot2::ggplot() +
+          ggplot2::aes(
+            x = .data[[x_var]], y = .data[[y_var]]
+          )
+      }
+    } else {
+      if (!is.null(labels)) {
+        plt <- X |>
+          dplyr::mutate(.label = labels) |>
+          dplyr::bind_cols(.color = color) |>
+          ggplot2::ggplot() +
+          ggplot2::aes(
+            x = .data[[x_var]], y = .data[[y_var]], 
+            color = .color, label = .label
+          )
+      } else {
+        plt <- X |>
+          dplyr::bind_cols(.color = color) |>
+          ggplot2::ggplot() +
+          ggplot2::aes(
+            x = .data[[x_var]], y = .data[[y_var]], color = .color
+          )
+      }
+    }
+    if (!is.null(labels)) {
+      plt <- plt +
+        ggplot2::geom_text(size = point_size)
+    } else {
+      plt <- plt +
+        ggplot2::geom_point(size = point_size)
+    }
+  } else {
+    # plot pair plot
+    plt <- ggwrappers::plot_pairs(
+      X,
+      columns = components,
+      color_lower = color,
+      point_size = point_size
+    )
+  }
+  plt <- plt +
+    ggplot2::labs(color = "Period") +
+    ggplot2::theme_minimal(...)
+  return(plt)
+}
+```
+
+#### Python
+
+```{python}
+#| code-fold: true
+import matplotlib.pyplot as plt
+import numpy as np
+
+def plot_scatter(X, components=[0, 1], color=None, labels=None, point_size=3, fontsize=8):
+  colormap = {'Founding Fathers': '#F8766D', 'Modern': '#7CAE00', 'Pre-Civil War': '#00BFC4', 'Pre-WW2': '#C77CFF'}
+  color = pres_period.map(colormap)
+  if len(components) == 2:
+    # plot 2d scatter plot
+    x_var = X.columns[components[0]]
+    y_var = X.columns[components[1]]
+    if color is None:
+      if labels is not None:
+        plt.scatter(X[x_var], X[y_var], s=0)
+        for i in range(X.shape[0]):
+          plt.text(X[x_var][i], X[y_var][i], labels[i], fontsize=fontsize)
+      else:
+        plt.scatter(X[x_var], X[y_var], s=point_size)
+    else:
+      if labels is not None:
+        plt.scatter(X[x_var], X[y_var], s=0)
+        for i in range(X.shape[0]):
+          plt.text(X[x_var][i], X[y_var][i], labels[i], c=color[i], fontsize=fontsize)
+      else:
+        plt.scatter(X[x_var], X[y_var], c=color, s=point_size)
+    plt.xlabel(x_var)
+    plt.ylabel(y_var)
+    plt.legend()
+  else:
+    # plot pair plot
+    pd.plotting.scatter_matrix(X, c=color, s=point_size)
+  plt.show()
+    
+```
+:::
+
+# Dimension Reduction
+
+## Principal Components Analysis (PCA)
+
+**Principal Components Analysis** (PCA) aims to find a lower-dimensional
+(linear) projection of the data that captures as much of the **variance** in the
+data as possible. The first principal component is the direction in which the
+data varies the most, the second principal component is the direction that
+captures the most variance after accounting for the first principal component,
+and so on.
+
+More formally, given data $\mathbf{X} \in \mathbb{R}^{n \times p}$, the $j^{th}$
+principal component, denoted $\mathbf{v}_j$, solves the following optimization
+problem:
+
+```{=tex}
+\begin{align*}
+\hat{\mathbf{v}}_j = \underset{\mathbf{v} \in \mathbb{R}^p}{\operatorname{argmax}} \;\; \operatorname{Var}(\underbrace{\mathbf{X}\mathbf{v}}_{\substack{\text{projection}\\ \text{of data } X\\ \text{ onto}\\\text{direction } \mathbf{v}}}) \quad \text{subject to} \quad \underbrace{\lVert \mathbf{v} \rVert_2^2 = 1, \; \mathbf{v}^T\hat{\mathbf{v}}_i = 0 \; \text{ for } i = 1, \ldots, j-1.}_{\text{constrained to be orthogonal to all previous PCs}}
+\end{align*}
+```
+In words, we want to find the principal component (or direction)
+$\hat{\mathbf{v}}_j$ such that when we project the data $\mathbf{X}$ onto this
+direction, the variance of the projected data is maximized. Moreover, we want to
+do this while ensuring that the direction $\mathbf{v}_j$ is scaled to have unit
+length (i.e., $\lVert \hat{\mathbf{v}}_j \rVert_2^2 = 1$) and is orthogonal to
+all previous principal components (i.e.,
+$\hat{\mathbf{v}}_j^T\hat{\mathbf{v}}_i = 0$ for $i = 1, \ldots, j-1$).
+
+#### Connection between PCA and SVD {.unnumbered}
+
+Though this optimization problem may look complicated, it turns out that the
+solution to this problem is actually given by the singular vector decomposition
+(SVD) of the data matrix $\mathbf{X}$. To make this connection, let's write out
+the SVD of $\mathbf{X}$ as:
+
+```{=tex}
+\begin{align*}
+\mathbf{X} = \mathbf{U} \mathbf{D} \mathbf{V}^T,
+\end{align*}
+```
+where
+$\mathbf{U} = [\mathbf{u}_1, \ldots, \mathbf{u}_n] \in \mathbb{R}^{n \times n}$
+and
+$\mathbf{V} = [\mathbf{v}_1, \ldots, \mathbf{v}_p] \in \mathbb{R}^{p \times p}$
+are orthogonal matrices whose columns are the left and right singular vectors of
+$\mathbf{X}$, respectively, and
+$\mathbf{D} = \text{diag}(d_1, \ldots, d_{\min\{n, p\}}) \in \mathbb{R}^{n \times p}$
+is a diagonal matrix whose diagonal entries are the singular values of
+$\mathbf{X}$.
+
+While we won't prove it here, it can be shown that the $j^{th}$ principal
+component of $\mathbf{X}$ is equal to the $j^{th}$ right singular vector of
+$\mathbf{X}$, i.e., $\hat{\mathbf{v}}_j = \mathbf{v}_j$. Since the $j^{th}$
+principal component score is the projection of $\mathbf{X}$ onto the $j^{th}$
+principal component $\hat{\mathbf{v}}_j$, it then follows that the $j^{th}$
+principal component score is equal to
+$\mathbf{X} \hat{\mathbf{v}}_j = \mathbf{X} \mathbf{v}_j = \mathbf{U} \mathbf{D} \mathbf{V}^T \mathbf{v}_j = d_j \mathbf{u}_j$.
+Moreover, the variance explained by the $j^{th}$ principal component is equal to
+$d_j^2$, and the proportion of variance explained by the $j^{th}$ principal
+component is equal to $\frac{d_j^2}{\sum_i d_i^2}$.
+
+In particular, the first principal component direction (i.e., the direction that
+explains the most variance in the data) is given by the first right singular
+vector of $\mathbf{X}$, and the first principal component score is given by the
+first left singular vector of $\mathbf{X}$ scaled by the first singular value.
+
+This connection between PCA and SVD is important because it allows us to quickly
+compute all of the principal components in one go (by computing the full SVD of
+$\mathbf{X}$). Moreover, this is a global and unique solution to the PCA problem
+(assuming that the data matrix $\mathbf{X}$ is not degenerate to begin with).
+
+#### Summary {.unnumbered}
+
+-   PCA is a linear dimension reduction method that aims to find a
+    lower-dimensional representation of the data that preserves as much of the
+    variance in the data as possible.
+-   PCA can be solved by computing the singular value decomposition (SVD) of the
+    data matrix $\mathbf{X}$ (for which there are very fast and well-studied
+    algorithms).
+
+#### Implementation {.unnumbered}
+
+::: panel-tabset
+##### R
+
+```{r}
+pca_out <- prcomp(pres_speech)
+scores <- as.data.frame(pca_out$x)
+plot_scatter(
+  scores, color = pres_period, labels = rownames(pres_speech)
+)
+```
+
+To further interpret the PCA results, we can look at two more things:
+
+1.  The **principal component loadings** (i.e., the weights of each feature
+    in each principal component):
+
+    ```{r}
+    loadings <- as.data.frame(pca_out$rotation)
+    head(loadings[, 1:4])
+    ```
+
+    which we might want to sort by their magnitude to see which features (in
+    this case, words) are most important in each principal component, e.g., for
+    PC1:
+
+    ```{r}
+    loadings |> 
+      tibble::rownames_to_column("word") |> 
+      dplyr::mutate(
+        rank = rank(-abs(PC1)),
+        PC1 = sprintf("%s (%.2f)", word, PC1)
+      ) |> 
+      dplyr::arrange(rank) |> 
+      dplyr::select(rank, PC1) |> 
+      head()
+    ```
+
+```{=html}
+<!-- -->
+```
+2.  The **proportion of variance explained** by each principal component:
+
+    ```{r}
+    var_explained <- pca_out$sdev^2 / sum(pca_out$sdev^2)
+    ```
+
+    which we can visualize in a scree plot:
+
+    ```{r}
+    data.frame(
+      PC = seq_along(var_explained),
+      cum_var_explained = cumsum(var_explained)
+    ) |> 
+      ggplot2::ggplot() +
+      ggplot2::aes(x = PC, y = cum_var_explained) +
+      ggplot2::geom_point() +
+      ggplot2::geom_line() +
+      ggplot2::labs(
+        x = "Number of Components",
+        y = "Cumulative Proportion of Variance Explained"
+      ) +
+      ggplot2::theme_minimal()
+    ```
+
+##### Python
+
+```{python}
+from sklearn.decomposition import PCA
+
+pca = PCA()
+scores = pd.DataFrame(pca.fit_transform(pres_speech))
+scores.columns = [f"PC{i+1}" for i in range(scores.shape[1])]
+plot_scatter(
+  scores, color=pres_period, labels=pres_speech.index
+)
+```
+
+To further interpret the PCA results, we can look at two more things:
+
+1.  The **principal component loadings** (i.e., the weights of each feature
+    in each principal component):
+
+    ```{python}
+    loadings = pd.DataFrame(pca.components_.T)
+    loadings
+    ```
+
+    which we might want to sort by their magnitude to see which features (in
+    this case, words) are most important in each principal component, e.g., for
+    PC1:
+
+    ```{python}
+    loadings["word"] = pres_speech.columns
+    loadings["rank"] = loadings[0].abs().rank(ascending=False)
+    loadings = loadings.rename(columns={0: "PC1"})
+    loadings[["rank", "word", "PC1"]].sort_values("rank").head()
+    ```
+
+```{=html}
+<!-- -->
+```
+2.  The **proportion of variance explained** by each principal component:
+
+    ```{python}
+    var_explained = pca.explained_variance_ratio_
+    ```
+
+    which we can visualize in a scree plot:
+
+    ```{python}
+    plt.plot(np.cumsum(var_explained), marker="o")
+    plt.xlabel("Number of Components")
+    plt.ylabel("Cumulative Proportion of Variance Explained")
+    plt.show()
+    ```
+
+:::
+
+## Multidimensional Scaling (MDS)
+
+Multidimensional scaling (MDS) aims to find a lower-dimensional representation
+of the data that preserves the **pairwise distances** between data points as
+much as possible.
+
+Given data $\mathbf{X} \in \mathbb{R}^{n \times p}$ and a pre-specified choice
+of the number of dimensions $r$, MDS solves the following optimization problem:
+
+```{=tex}
+\begin{align*}
+\hat{\mathbf{Z}} = \underset{\mathbf{Z} \in \mathbb{R}^{n \times r}}{\operatorname{argmin}} \;\; \sum_{i \neq j} \big( \underbrace{\lVert \mathbf{x}_i - \mathbf{x}_j \rVert_2}_{\substack{\text{distance between }\\\text{points } i \text{ and } j \\\text{ in \textbf{original space}}}} - \underbrace{\lVert \mathbf{z}_i - \mathbf{z}_j \rVert_2}_{\substack{\text{distance between }\\\text{points } i \text{ and } j \\\text{ in \textbf{low-dim space}}}} \big)^2,
+\end{align*}
+```
+In words, MDS tries to find a new set of points
+$\hat{\mathbf{Z}} \in \mathbb{R}^{n \times r}$ in the lower $r$-dimensional
+space such that the pairwise Euclidean distances between the points in the
+lower-dimensional space are similar to the original distances.
+
+Note that MDS can be applied to scenarios where we don't have direct access to
+the data $\mathbf{X}$, but we have access to the pairwise distances between the
+data points $D_{ij} = \lVert \mathbf{x}_i - \mathbf{x}_j \rVert_2$. In this
+case, we can use the pairwise distance matrix
+$\mathbf{D} \in \mathbb{R}^{n \times n}$, where
+$D_{ij} = \lVert \mathbf{x}_i - \mathbf{x}_j \rVert_2$, as the input to MDS.
+There has also been numerous extensions of MDS, which allow for the use of other
+distance metrics in place of the Euclidean distance shown here.
+
+#### Summary {.unnumbered}
+
+-   MDS is a dimension reduction method that aims to find a lower-dimensional
+    representation of the data that preserves the pairwise distances between
+    data points.
+-   MDS is particular useful when we only have access to the pairwise distances
+    between data points (and not the actual data points themselves).
+
+#### Implementation {.unnumbered}
+
+::: panel-tabset
+##### R
+
+```{r}
+mds_out <- cmdscale(dist(pres_speech), k = 2)
+scores <- as.data.frame(mds_out) |> 
+  setNames(paste0("MDS", 1:ncol(mds_out)))
+plot_scatter(
+  scores, color = pres_period, labels = rownames(pres_speech)
+)
+```
+
+##### Python
+
+```{python}
+from sklearn.manifold import MDS
+
+mds = MDS(n_components=2)
+scores = pd.DataFrame(mds.fit_transform(pres_speech))
+scores.columns = [f"MDS{i+1}" for i in range(scores.shape[1])]
+plot_scatter(
+  scores, color=pres_period, labels=pres_speech.index
+)
+```
+:::
+
+## Independent Components Analysis (ICA)
+
+Whereas PCA decomposes the data into a set of orthogonal components, Independent
+Components Analysis (ICA) aims to decompose the data into **statistically
+independent** components.
+
+Given a (centered) data matrix $\mathbf{X} \in \mathbb{R}^{n \times p}$ and a
+pre-specified number of components $r$, ICA assumes that there exists a set of
+$r$ statistically independent ("source") components
+$\mathbf{S} \in \mathbb{R}^{n \times r}$ such that the data $\mathbf{X}$ can be
+represented as a linear combination of the statistically independent components
+$\mathbf{S}$. That is, ICA assumes that \begin{align*}
+\mathbf{X} = \mathbf{S} \mathbf{A},
+\end{align*} where $\mathbf{A} \in \mathbb{R}^{r \times p}$ is a mixing matrix
+(i.e., a set of linear weights). The goal of ICA then is to "un-mix" the data by
+estimating an un-mixing matrix $\mathbf{W} \in \mathbb{R}^{r \times r}$ such
+that \begin{align*}
+\mathbf{X} \mathbf{W} = \mathbf{S}.
+\end{align*} (If $\mathbf{A}$ were a square matrix, one could think of this
+$\mathbf{W}$ as something like an inverse matrix of $\mathbf{A}$.)
+
+Under these modeling assumptions, the Central Limit Theorem tells us that the
+signal in the data $\mathbf{X}$ will tend to be more Gaussian than the
+independent source components $\mathbf{S}$ (this is because $\mathbf{X}$ is a
+linear combination of these source components). Thus, ICA searches for an
+un-mixing matrix $\mathbf{W}$ that maximizes the non-Gaussianity of the source
+components $\mathbf{S}$.
+
+Note that ICA is known to be highly sensitive to noise. Thus, it is often
+recommended to apply ICA after first applying PCA.
+
+#### Summary {.unnumbered}
+
+-   ICA aims to decompose the data into a linear combination of statistically
+    independent source components.
+-   ICA is most effective when we believe that the underlying source signals are
+    highly non-Gaussian.
+    -   Consequently, ICA has been widely used and successful in signal
+        processing applications (e.g., the "cocktail" problem).
+
+#### Implementation {.unnumbered}
+
+::: panel-tabset
+### R
+
+```{r}
+library(fastICA)
+
+ica_out <- fastICA::fastICA(pres_speech, n.comp = 2)
+scores <- as.data.frame(ica_out$S) |> 
+  setNames(paste0("IC", 1:ncol(ica_out$S)))
+plot_scatter(
+  scores, color = pres_period, labels = rownames(pres_speech)
+)
+```
+To further interpret the ICA results, we can also take a look at the mixing matrix $\mathbf{A} \in \mathbb{R}^{r \times p}$, which tells us how much each feature contributes to each independent component:
+
+```{r}
+mixing_matrix <- as.data.frame(ica_out$A)
+```
+
+which we might want to sort by their magnitude to see which features (in this case, words) are most important in each component, e.g., for the first IC:
+
+```{r}
+as.data.frame(t(mixing_matrix)) |> 
+  dplyr::mutate(
+    word = colnames(pres_speech),
+    rank = rank(-abs(V1)),
+    IC1 = sprintf("%s (%.2f)", word, V1)
+  ) |> 
+  dplyr::arrange(rank) |>
+  dplyr::select(rank, IC1) |> 
+  head()
+```
+
+### Python
+
+```{python}
+from sklearn.decomposition import FastICA
+
+ica = FastICA(n_components=2)
+scores = pd.DataFrame(ica.fit_transform(pres_speech))
+scores.columns = [f"IC{i+1}" for i in range(scores.shape[1])]
+plot_scatter(
+  scores, color=pres_period, labels=pres_speech.index
+)
+```
+
+To further interpret the ICA results, we can also take a look at the mixing matrix $\mathbf{A} \in \mathbb{R}^{r \times p}$, which tells us how much each feature contributes to each independent component:
+
+```{python}
+mixing_matrix = pd.DataFrame(ica.mixing_)
+```
+
+which we might want to sort by their magnitude to see which features (in this case, words) are most important in each component, e.g., for the first IC:
+
+```{python}
+mixing_matrix["word"] = pres_speech.columns
+mixing_matrix["rank"] = mixing_matrix[0].abs().rank(ascending=False)
+mixing_matrix = mixing_matrix.rename(columns={0: "IC1"})
+mixing_matrix[["rank", "word", "IC1"]].sort_values("rank").head()
+```
+
+:::
+
+## Non-negative Matrix Factorization (NMF)
+
+Non-negative Matrix Factorization (NMF) is a dimension reduction method, which
+requires **non-negative data** as input, and aims to decompose the data into a
+linear combination of two low-rank matrices --- one capturing patterns in the
+sample/observation space (i.e., the "scores") and the other capturing patterns
+in the feature space (i.e., the "loadings").
+
+Formally, given a non-negative data matrix
+$\mathbf{X} \in \mathbf{R}^{n \times p}$ (i.e., each entry in $\mathbf{X}$ is
+non-negative) and given a pre-specified number of components $r$, NMF solves the
+optimization problem: \begin{align*}
+\hat{\mathbf{W}}, \hat{\mathbf{H}} = \underset{\mathbf{W} \geq 0, \mathbf{H} \geq 0}{\operatorname{argmin}} \;\; \lVert \mathbf{X} - \mathbf{W}\mathbf{H} \rVert_F^2,
+\end{align*} where $\hat{\mathbf{W}} \in \mathbb{R}^{n \times r}$ is the
+"scores" matrix and $\hat{\mathbf{H}} \in \mathbb{R}^{r \times p}$ is the
+"loadings" matrix.
+
+In other words, NMF tries to find two non-negative, low-rank matrices
+$\mathbf{W}$ and $\mathbf{H}$ such that their product approximates the original
+data matrix $\mathbf{X}$ as closely as possible, that is, \begin{align*}
+\mathbf{X} \approx \mathbf{W}\mathbf{H}.
+\end{align*} Moreover, we can interpret the columns of $\mathbf{W}$ as the
+"scores" of the data points in the lower-dimensional space (analogous to the PC
+scores) and the columns of $\mathbf{H}$ as the "loadings" of the features in the
+lower-dimensional space (analogous to the PC loadings).
+
+NMF is typically referred to as a "low-rank" approximation method. A low-rank
+approximation method is one that tries to simplify a complex data matrix (e.g.,
+$\mathbf{X}$) by approximating it with smaller/simpler/low-rank matrices (e.g.,
+$\mathbf{W}$ and $\mathbf{H}$).
+
+#### Summary {.unnumbered}
+
+-   NMF aims to find a low-rank approximation of the data matrix $\mathbf{X}$ by
+    factorizing it into two simpler matrices $\mathbf{W}$ (the sample scores)
+    and $\mathbf{H}$ (the feature loadings).
+-   NMF requires that the input data have all non-negative entries. Though this
+    can be a limitation, this also makes NMF particularly useful for data that
+    is inherently non-negative (e.g., word counts, image data, etc.) as it
+    exploits this special structure.
+
+#### Implementation {.unnumbered}
+
+::: panel-tabset
+### R
+
+```{r}
+# note if you need to install NMF in renv, you may need to first install the Biobase R package via `renv::install("bioc::Biobase")`
+library(NMF)
+
+nmf_out <- NMF::nmf(pres_speech, rank = 2)
+scores <- as.data.frame(nmf_out@fit@W) |> 
+  setNames(paste0("NMF", 1:ncol(nmf_out@fit@W)))
+plot_scatter(
+  scores, color = pres_period, labels = rownames(pres_speech)
+)
+```
+
+To further interpret the NMF results, we can also take a look at the feature loadings matrix $\mathbf{H} \in \mathbb{R}^{r \times p}$, which tells us how much each feature contributes to each NMF component:
+
+```{r}
+h <- nmf_out@fit@H
+```
+
+which we might want to sort by their magnitude to see which features (in this case, words) are most important in each component, e.g., for the first NMF component:
+
+```{r}
+as.data.frame(t(h)) |> 
+  tibble::rownames_to_column("word") |>
+  dplyr::mutate(
+    rank = rank(-abs(V1)),
+    NMF1 = sprintf("%s (%.2f)", word, V1)
+  ) |> 
+  dplyr::arrange(rank) |>
+  dplyr::select(rank, NMF1) |> 
+  head()
+```
+
+### Python
+
+```{python}
+from sklearn.decomposition import NMF
+
+nmf = NMF(n_components=2)
+scores = pd.DataFrame(nmf.fit_transform(pres_speech))
+scores.columns = [f"NMF{i+1}" for i in range(scores.shape[1])]
+plot_scatter(
+  scores, color=pres_period, labels=pres_speech.index
+)
+```
+
+To further interpret the NMF results, we can also take a look at the feature loadings matrix $\mathbf{H} \in \mathbb{R}^{r \times p}$, which tells us how much each feature contributes to each NMF component:
+
+```{python}
+h = pd.DataFrame(nmf.components_.T)
+```
+
+which we might want to sort by their magnitude to see which features (in this case, words) are most important in each component, e.g., for the first NMF component:
+
+```{python}
+h["word"] = pres_speech.columns
+h["rank"] = h[0].abs().rank(ascending=False)
+h = h.rename(columns={0: "NMF1"})
+h[["rank", "word", "NMF1"]].sort_values("rank").head()
+```
+
+:::
+
+## t-Distributed Stochastic Neighbor Embedding (tSNE)
+
+t-Distributed Stochastic Neighbor Embedding (tSNE) is a nonlinear dimension
+reduction method which aims to preserve the **local neighborhood structure** of
+the data.
+
+At a high-level, the idea behind tSNE is to model the pairwise similarities (or
+neighborhood structure) between data points in the high-dimensional space and
+the low-dimensional space. In particular, tSNE defines a probability
+distribution over pairs of data points in the high-dimensional space based on
+their similarities (e.g., based on the Euclidean distance between the data
+points). It then defines a similar probability distribution over pairs of data
+points in the low-dimensional space. The goal of tSNE is then to find the
+low-dimensional representation of the data that minimizes the difference between
+these two probability distributions.
+
+The details of how tSNE actually does this is perhaps too involved to present in
+this notebook. However, if you would like to learn more, here is a great
+[tutorial](https://www.dailydoseofds.com/formulating-and-implementing-the-t-sne-algorithm-from-scratch/).
+
+What's important to know for practical purposes:
+
+-   tSNE requires a pre-specified number of dimensions for the lower-dimensional
+    space. Typically, tSNE is run with 2 or 3 dimensions.
+-   Often, PCA is performed before running tSNE to reduce the dimensionality of
+    the data and to speed up the tSNE algorithm. This also helps tSNE to avoid
+    the "curse of dimensionality", which can be a major problem when computing
+    distances between points in high dimensions (as is done in the tSNE
+    algorithm).
+-   tSNE often does a great job at preserving the local structure of the data,
+    but sometimes at the cost of losing the global structure. In other words,
+    when interpreting a tSNE output, it is best practice to de-emphasize the
+    relative distance or position of points/clusters that are far apart from
+    each other.
+-   As part of tSNE's probability model, there is an important hyperparameter,
+    referred to as "perplexity", which acts like a bandwidth for how flexible
+    the tSNE embedding can be. This hyperparameter can substantially affect the
+    tSNE output.
+
+I would highly encourage you to check out this fantastic [blog
+post](https://distill.pub/2016/misread-tsne/) on tSNE which provides great
+intuition for how the hyperparameters of tSNE (e.g., perplexity) can affect the
+resulting embeddings. It also gives great insight into the tradeoff between
+preserving local and global structure in tSNE and how to best interpret the
+results.
+
+#### Summary {.unnumbered}
+
+-   tSNE is a nonlinear dimension reduction method, which aims to preserve the
+    probability distribution of neighboring points between the original space
+    and the lower-dimensional space.
+-   tSNE is often great at preserving the local structure of the data, but at
+    the cost of losing the global structure. This tradeoff is partially
+    controlled by the perplexity hyperparameter in tSNE.
+
+#### Implementation {.unnumbered}
+
+::: panel-tabset
+##### R
+
+```{r}
+library(Rtsne)
+
+tsne_out <- Rtsne::Rtsne(pres_speech, dims = 2, perplexity = 5)
+scores <- as.data.frame(tsne_out$Y) |> 
+  setNames(paste0("tSNE", 1:ncol(tsne_out$Y)))
+plot_scatter(
+  scores, color = pres_period, labels = rownames(pres_speech)
+)
+```
+
+##### Python
+
+```{python}
+from sklearn.manifold import TSNE
+
+tsne = TSNE(n_components=2, perplexity=5)
+scores = pd.DataFrame(tsne.fit_transform(pres_speech))
+scores.columns = [f"tSNE{i+1}" for i in range(scores.shape[1])]
+plot_scatter(
+  scores, color=pres_period, labels=pres_speech.index
+)
+```
+:::
+
+## Uniform Manifold Approximation and Projection (UMAP)
+
+Like tSNE, Uniform Manifold Approximation and Projection (UMAP) is a nonlinear
+dimension reduction method that aims to preserve the **local neighborhood
+structure** of the data. However, unlike tSNE, UMAP is generally thought to be
+better at preserving the **global structure** of the data (but not always).
+
+At a high-level, UMAP constructs a high-dimensional graph representation of the
+data, where each data point is connected to its nearest neighbors in the
+original space. UMAP then constructs a low-dimensional graph representation of
+the data and tries to preserve the graph structure between the high-dimensional
+and low-dimensional representations. The key idea behind UMAP is to find a
+low-dimensional representation of the data that minimizes the cross-entropy
+between the high-dimensional and low-dimensional graph representations.
+
+Again, the details of how UMAP actually does this is perhaps too involved to
+present in this notebook. (In fact, to rigorously present UMAP, we would need to
+introduce manifold learning and topological data analysis.) However, if you
+would like to learn more, here is a great and accessible
+[tutorial](https://umap-learn.readthedocs.io/en/latest/how_umap_works.html) on
+UMAP.
+
+What's important to know for practical purposes:
+
+-   UMAP requires a pre-specified number of dimensions for the lower-dimensional
+    space. Typically, UMAP is run with 2 or 3 dimensions.
+-   Often, PCA is performed before running UMAP to reduce the dimensionality of
+    the data and to speed up the UMAP algorithm. This also helps UMAP to avoid
+    the "curse of dimensionality", which can be a major problem when computing
+    distances between points in high dimensions (as is done in the UMAP
+    algorithm).
+-   UMAP has a few hyperparameters that can substantially affect the UMAP
+    output, including the "number of neighbors" to consider when constructing
+    the high-dimensional graph and the "minimum distance" hyperparameter which
+    controls the minimum distance between points in the low-dimensional space.
+    Like tSNE, the output of UMAP can change substantially based on these
+    hyperparameters.
+
+#### Summary {.unnumbered}
+
+-   UMAP is a nonlinear dimension reduction method based on manifold learning
+    and ideas from topological data analysis (like building neighborhood graph
+    representations).
+-   UMAP is generally thought to be better at preserving the global structure of
+    the data compared to tSNE.
+-   However, UMAP still depends on a few hyperparameters (like the number of
+    neighbors and the minimum distance) that can substantially affect the
+    output.
+
+#### Implementation {.unnumbered}
+
+::: panel-tabset
+##### R
+
+```{r}
+library(umap)
+
+umap_out <- umap::umap(
+  pres_speech, n_components = 2, n_neighbors = 15, min_dist = 0.1
+)
+scores <- as.data.frame(umap_out$layout) |> 
+  setNames(paste0("UMAP", 1:ncol(umap_out$layout)))
+plot_scatter(
+  scores, color = pres_period, labels = rownames(pres_speech)
+)
+```
+
+##### Python
+
+```{python}
+#| eval: false # somehow can't get this python chunk to run using reticulate when rendering quarto
+import umap
+
+umap_out = umap.UMAP(n_components=2, n_neighbors=15, min_dist=0.1)
+scores = pd.DataFrame(umap_out.fit_transform(pres_speech))
+scores.columns = [f"UMAP{i+1}" for i in range(scores.shape[1])]
+plot_scatter(
+  scores, color=pres_period, labels=pres_speech.index
+)
+```
+:::
+
+## Other Dimension Reduction methods
+
+Other popular dimension reduction methods that are not covered in this notebook
+but are of interest:
+
+-   Isomap
+-   Locally Linear Embedding (LLE)
+-   Autoencoders
+-   And many more...
+
+# Clustering
+
+## K-means
+
+## Hierarchical Clustering
+
+## Density-Based Spatial Clustering of Applications with Noise (DBSCAN)
