@@ -194,7 +194,7 @@ def plot_scatter(X, components=[0, 1], color=None, labels=None, point_size=3, fo
 
 ## Principal Components Analysis (PCA)
 
-**Principal Components Analysis** (PCA) aims to find a lower-dimensional
+Principal Components Analysis (PCA) aims to find a lower-dimensional
 (linear) projection of the data that captures as much of the **variance** in the
 data as possible. The first principal component is the direction in which the
 data varies the most, the second principal component is the direction that
@@ -342,10 +342,10 @@ To further interpret the PCA results, we can look at two more things:
 from sklearn.decomposition import PCA
 
 pca = PCA()
-scores = pd.DataFrame(pca.fit_transform(pres_speech))
-scores.columns = [f"PC{i+1}" for i in range(scores.shape[1])]
+pca_scores = pd.DataFrame(pca.fit_transform(pres_speech))
+pca_scores.columns = [f"PC{i+1}" for i in range(pca_scores.shape[1])]
 plot_scatter(
-  scores, color=pres_period, labels=pres_speech.index
+  pca_scores, color=pres_period, labels=pres_speech.index
 )
 ```
 
@@ -848,6 +848,300 @@ but are of interest:
 
 ## K-means
 
+K-means clustering is a simple and popular clustering algorithm that aims to find $K$ clusters (i.e., groups) in the data which result in the smallest within-cluster variance. 
+
+More precisely, given data $\mathbf{x}_1, \ldots, \mathbf{x}_n \in \mathbb{R}^{p}$ and a pre-specified number of clusters $K$, K-means aims to find the cluster assignments $\hat{z}_1, \ldots, \hat{z}_n \in \{1, \ldots, K\}$ that minimize the following objective function:
+\begin{align*}
+\hat{z}_1, \ldots, \hat{z}_n = \underset{z_1, \ldots, z_n}{\operatorname{argmin}} \;\; \sum_{k=1}^K \sum_{i: z_i = k} \lVert \mathbf{x}_i - \mathbf{c}_k \rVert_2^2 \qquad \text{subject to} \;\; \mathbf{c}_k = \frac{1}{\lvert \{i: z_i = k\} \rvert} \sum_{i: z_i = k} \mathbf{x}_i.
+\end{align*}
+
+Intuitively:
+
+- $\hat{z}_i$ is the cluster assignment of the $i^{th}$ data point $\mathbf{x}_i$ (e.g., $\hat{z}_i = 1$ means that the $i^{th}$ data point belongs to the first cluster);
+- $\mathbf{c}_k$ is the center point of the $k^{th}$ cluster, or equivalently, the average of all samples assigned to cluster $k$.
+
+Thus, an equivalent interpretation of this mathematical formulation is that K-means is trying to find the cluster assignments that minimize the within-cluster variance, defined as the sum of the squared Euclidean distances between each data point and its assigned cluster center.
+
+#### K-means optimization algorithm {.unnumbered}
+
+**So how do we solve this optimization problem?** K-means is typically solved using an iterative algorithm that alternates between updating the cluster assignments and updating the cluster centers. That is, the K-means algorithm proceeds as follows:
+
+0. **Initialize the cluster centers**: Randomly initialize the cluster centers $\mathbf{c}_1, \ldots, \mathbf{c}_K$. Typically, the cluster centers are initialized by randomly selecting $K$ data points from the dataset.
+1. **Update the cluster assignments**: Assign each data point to the cluster with the nearest cluster center, i.e., $\hat{z}_i = \underset{k}{\operatorname{argmin}} \lVert \mathbf{x}_i - \mathbf{c}_k \rVert_2^2$.
+2. **Update the cluster centers**: Update the cluster centers to be the average of all data points assigned to that cluster, i.e., $\mathbf{c}_k = \frac{1}{\lvert \{i: \hat{z}_i = k\} \rvert} \sum_{i: \hat{z}_i = k} \mathbf{x}_i$.
+3. **Repeat steps 2 and 3 until convergence**: Repeat steps 2 and 3 until the cluster assignments no longer change or until some other stopping criterion is met.
+
+An illustration of how this algorithm works is shown in the figure below (astericks denote the cluster centers):
+
+```{r}
+#| code-fold: true
+#| fig-width: 14
+#| fig-height: 3.5
+#| column: page
+
+# code to understand K-means algorithm
+kmeans_movie <- function(X, K, max_iter = 2) {
+  n <- nrow(X)
+  X <- as.data.frame(X)
+  x_var <- colnames(X)[1]
+  y_var <- colnames(X)[2]
+  plt_ls <- list()
+  plt_idx <- 1
+  
+  # step 1: initialize cluster centers
+  init_centers_idx <- sample(1:n, K)
+  cluster_centers <- X[init_centers_idx, ]
+  plt_ls[[plt_idx]] <- ggplot2::ggplot(X) +
+    ggplot2::aes(
+      x = .data[[x_var]], 
+      y = .data[[y_var]]
+    ) +
+    ggplot2::geom_point() +
+    ggplot2::geom_point(
+      data = cluster_centers |> 
+        dplyr::mutate(.cluster = factor(1:K)),
+      ggplot2::aes(color = .cluster),
+      shape = 8, size = 3
+    ) +
+    ggplot2::labs(
+      color = "Cluster ID",
+      title = "Initialize cluster centers"
+    ) +
+    ggplot2::theme_classic() +
+    ggplot2::guides(color = "none")
+  plt_idx <- plt_idx + 1
+  
+  for (iter in 1:max_iter) {
+    # step 2: update cluster assignments
+    cluster_ids <- purrr::map(
+      1:K,
+      function(k) {
+        cluster_centers_mat <- matrix(
+          as.matrix(cluster_centers[k, ]), 
+          nrow = n, ncol = ncol(cluster_centers), byrow = TRUE
+        )
+        rowSums((as.matrix(X) - cluster_centers_mat)^2)
+      }
+    ) |> 
+      purrr::reduce(cbind) |> 
+      apply(1, which.min)
+    plt_ls[[plt_idx]] <- X |> 
+      dplyr::mutate(
+        .cluster = as.factor(cluster_ids)
+      ) |>
+      ggplot2::ggplot() +
+      ggplot2::aes(
+        x = .data[[x_var]], 
+        y = .data[[y_var]],
+        color = .cluster
+      ) +
+      ggplot2::geom_point() +
+      ggplot2::geom_point(
+        data = cluster_centers |> 
+          dplyr::mutate(.cluster = factor(1:K)),
+        shape = 8, size = 3
+      ) +
+      ggplot2::labs(
+        color = "Cluster ID",
+        title = "Updated cluster assignments"
+      ) +
+      ggplot2::theme_classic()
+    plt_idx <- plt_idx + 1
+    
+    # update cluster centers
+    cluster_centers <- X |> 
+      dplyr::mutate(
+        .cluster = as.factor(cluster_ids)
+      ) |> 
+      dplyr::group_by(.cluster) |> 
+      dplyr::summarize(
+        across(
+          .cols = everything(),
+          .fns = mean
+        )
+      )
+    plt_ls[[plt_idx]] <- X |> 
+      dplyr::mutate(
+        .cluster = as.factor(cluster_ids)
+      ) |> 
+      ggplot2::ggplot() +
+      ggplot2::aes(
+        x = .data[[x_var]], 
+        y = .data[[y_var]],
+        color = .cluster
+      ) +
+      ggplot2::geom_point() +
+      ggplot2::geom_point(
+        data = cluster_centers,
+        shape = 8, size = 3
+      ) +
+      ggplot2::labs(
+        color = "Cluster ID",
+        title = "Updated cluster centers"
+      ) +
+      ggplot2::theme_classic()
+    plt_idx <- plt_idx + 1
+    
+    cluster_centers <- cluster_centers |> 
+      dplyr::select(-.cluster) |> 
+      dplyr::ungroup()
+  }
+  
+  return(plt_ls)
+}
+
+# run kmeans using first 2 PCs of the presidential speech dataset for ease of visualizations
+X <- pca_out$x[, 1:2]
+kmeans_movie_plts <- kmeans_movie(X, K = 3, max_iter = 2)
+plt <- patchwork::wrap_plots(kmeans_movie_plts, nrow = 1, guides = "collect") + 
+  patchwork::plot_layout(axis_titles = "collect")
+plt
+```
+
+When using K-means in practice, there are three important things to keep in mind:
+
+- Given the complexity of this optimization problem, the above K-means algorithm is only guaranteed to converge to a [local minimum](https://mohitmishra786687.medium.com/the-curse-of-local-minima-how-to-escape-and-find-the-global-minimum-fdabceb2cd6a) of the objective function, not necessarily the global minimum. As a consequence, the K-means solution can sometimes depend on the initial cluster centers. It is common (and the default implementation in many software packages) to run the K-means algorithm multiple times, each with a different initialization, and then to select the cluster assignments that leads to the smallest within-cluster variance.
+- In K-means, data points are assigned to the cluster whose center is closest to them. Thus, for K-means to work well, the clusters should be relatively spherical and have similar sizes. If the clusters are not spherical, K-means can produce suboptimal results.
+- K-means relies on the Euclidean distance to measure the similarity between data points. However, in high-dimensional settings, distances are often not "meaningful" since everything is far apart in such large spaces (this is known as the [curse of dimensionality](https://en.wikipedia.org/wiki/Curse_of_dimensionality)). Thus, it is often recommended to apply PCA or other dimension reduction methods before running K-means.
+
+#### Summary {.unnumbered}
+
+- K-means is a clustering method, which aims to find $K$ clusters in the data that minimize the within-cluster variance.
+- K-means works well when the clusters are relatively spherical and have similar sizes. This is due to the fact that data points are assigned to the cluster whose center is closest to them in the K-means algorithm.
+
+#### Implementation {.unnumbered}
+
+::: panel-tabset
+
+##### R
+
+```{r}
+kmeans_out <- stats::kmeans(pres_speech, centers = 4)
+cluster_assignments <- kmeans_out$cluster
+cluster_centers <- kmeans_out$centers
+scores <- as.data.frame(pca_out$x[, 1:2]) |> 
+  dplyr::mutate(cluster = as.factor(cluster_assignments))
+plot_scatter(
+  scores, color = as.factor(cluster_assignments), labels = rownames(pres_speech)
+) +
+  ggplot2::labs(color = "Clusters")
+```
+
+##### Python
+
+```{python}
+from sklearn.cluster import KMeans
+
+kmeans = KMeans(n_clusters=4)
+cluster_assignments = kmeans.fit_predict(pres_speech)
+cluster_centers = kmeans.cluster_centers_
+plot_scatter(
+  pca_scores, color=cluster_assignments, labels=pres_speech.index
+)
+```
+
+:::
+
 ## Hierarchical Clustering
 
-## Density-Based Spatial Clustering of Applications with Noise (DBSCAN)
+Hierarchical clustering is a clustering method that aims to build a nested hierarchy of clusters. Unlike K-means, hierarchical clustering does not require a pre-specified number of clusters $K$. Instead, hierarchical clustering produces a tree-like structure of clusters, known as a **dendrogram**, from which one can obtain the cluster assignments for any desired number of clusters. 
+
+The key idea behind (agglomerative) hierarchical clustering is to iteratively merge clusters that are "closest" together. Thus, one needs a way to define two types of distances: (1) the distance between two individual data points, and (2) the distance between two clusters. For the former, traditional distance metrics (e.g., Euclidean ($\ell_2$), $\ell_1$, or Mahalanobis distances) can be used. For the latter, several different *linkages* (i.e., distance metrics for clusters) have been introduced, such as:
+
+- **Single linkage**: The distance between two clusters is defined as the minimum distance between any two points in the two clusters.
+- **Complete linkage**: The distance between two clusters is defined as the maximum distance between any two points in the two clusters.
+- **Average linkage**: The distance between two clusters is defined as the average distance between all pairs of points in the two clusters.
+- **Ward's linkage**: The distance between two clusters is defined as the increase in the within-cluster variance that results from merging the two clusters.
+
+Each of these linkages has their own advantages and disadvantages, which can have a substantial impact on the resulting clusters and dendrogram. We briefly summarize the differences between these linkages below:
+
+- **Single linkage**: Single linkage is often very sensitive to outliers and tends to produce extended, trailing clusters that are formed by fusing observations one at a time (i.e., "chaining"). It frequently results in unbalanced clusters, but it can handle very diverse shapes.
+- **Complete linkage**: Complete linkage is more robust to outliers than single linkage and tends to produce clusters with similar sizes. While it works well with spherical distributions, it can struggle with more elongated and diverse cluster shapes.
+- **Average linkage**: Average linkage is a compromise between single and complete linkage. 
+- **Ward's linkage**: Ward's linkage is arguably the most popular linkage method. It is particularly useful when the clusters are relatively spherical and are normally distributed. However, it can struggle with very large datasets due to the higher computational complexity.
+
+Moreover, as with K-means, since hierarchical clustering relies heavily on distances between points, it is often recommended to apply PCA or other dimension reduction methods before running hierarchical clustering to avoid the "curse of dimensionality".
+
+#### Summary {.unnumbered}
+
+- Hierarchical clustering is a clustering method that produces a nested hierarchy of clusters, known as a dendrogram, which does not require choosing the number of clusters until after hierarchical clustering has been performed.
+- There are many different linkage methods that can be used in hierarchical clustering, which can have a large impact on the clustering results.
+
+#### Implementation {.unnumbered}
+
+::: panel-tabset
+
+##### R
+
+```{r}
+hc_out <- stats::hclust(dist(pres_speech), method = "ward.D")
+cluster_assignments <- cutree(hc_out, k = 4)
+scores <- as.data.frame(pca_out$x[, 1:2]) |> 
+  dplyr::mutate(cluster = as.factor(cluster_assignments))
+plot_scatter(
+  scores, color = as.factor(cluster_assignments), labels = rownames(pres_speech)
+) +
+  ggplot2::labs(color = "Clusters")
+```
+
+We can visualize the dendrogram using the [`ggdendro`](https://andrie.github.io/ggdendro/) package:
+
+```{r}
+library(ggdendro)
+
+ggdendro::ggdendrogram(hc_out)
+```
+
+##### Python
+
+```{python}
+from sklearn.cluster import AgglomerativeClustering
+
+hc = AgglomerativeClustering(n_clusters=4, linkage="ward")
+cluster_assignments = hc.fit_predict(pres_speech)
+plot_scatter(
+  pca_scores, color=cluster_assignments, labels=pres_speech.index
+)
+```
+
+We can visualize the dendrogram using `scipy`'s dendrogram function as follows:
+
+```{python}
+from scipy.cluster.hierarchy import dendrogram
+
+def plot_dendrogram(model, **kwargs):
+  # Create linkage matrix and then plot the dendrogram
+
+  # create the counts of samples under each node
+  counts = np.zeros(model.children_.shape[0])
+  n_samples = len(model.labels_)
+  for i, merge in enumerate(model.children_):
+    current_count = 0
+    for child_idx in merge:
+      if child_idx < n_samples:
+        current_count += 1  # leaf node
+      else:
+        current_count += counts[child_idx - n_samples]
+    counts[i] = current_count
+
+  linkage_matrix = np.column_stack([model.children_, model.distances_,
+                                    counts]).astype(float)
+
+  # Plot the corresponding dendrogram
+  dendrogram(linkage_matrix, **kwargs)
+
+hc = AgglomerativeClustering(distance_threshold=0, n_clusters=None)
+hc = hc.fit(pres_speech)
+plot_dendrogram(hc)
+plt.show()
+```
+
+:::
+
+## Other Clustering Methods
+
+- Density-Based Spatial Clustering of Applications with Noise (DBSCAN)
+- Gaussian Mixture Models (GMM)
+- Spectral clustering
+- Convex clustering
+- And many more...
