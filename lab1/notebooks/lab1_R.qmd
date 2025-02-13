@@ -1,34 +1,73 @@
 ---
 title: "Lab 1 - Redwood Trees"
-author: "Insert Name Here"
+author: "Prof. Tiffany Tang"
+date: today
 format: 
   html:
     code-fold: true
     code-summary: "Show Code"
     code-tools: true
     theme: sandstone
+    lightbox: true
     # theme: yeti
+    embed-resources: true
 toc: true
 execute: 
   warning: false
   message: false
+bibliography: bibliography.bib
 ---
 
 ```{r setup, include=FALSE}
 # source all functions from R/ folder
-for (fname in list.files(here::here("R"), pattern = "*.R")) {
-  source(here::here(file.path("R", fname)))
+for (fname in list.files(here::here("R_solutions"), pattern = "*.R")) {
+  source(here::here(file.path("R_solutions", fname)))
 }
 
 # path to data
 DATA_PATH <- here::here("data")
+
+# helper variables
+var_labeller <- c(
+  humidity = "Humidity (%)",
+  temp = "Temperature\n(°C)",
+  iPAR = "Incident PAR\n(µmol/m²/s)",
+  rPAR = "Reflected PAR\n(µmol/m²/s)"
+)
+custom_ggplot_theme <- ggplot2::theme(
+  strip.text.y = ggplot2::element_text(face = "bold", size = 12),
+  strip.background.y = ggplot2::element_blank(),
+  strip.placement = "outside",
+  axis.title.y = ggplot2::element_blank(),
+  axis.title.x = ggplot2::element_text(face = "bold", size = 12),
+  axis.line = ggplot2::element_line(color = "black", linewidth = 0.5),
+  axis.text.x = ggplot2::element_text(angle = 90, hjust = 1, vjust = 0.5),
+  legend.title = ggplot2::element_text(face = "bold", size = 12),
+  legend.text = ggplot2::element_text(size = 10),
+  title = ggplot2::element_text(face = "italic", size = 14, hjust = 0.5),
+  panel.border = ggplot2::element_rect(
+    color = "black", fill = NA, linewidth = 0.5
+  ),
+  panel.background = ggplot2::element_blank()
+)
 ```
 
 # Introduction
 
+In order to better understand the fundamental processes which govern our ecosystems, biologists have actively studied temporal and spatial gradients in forest microclimates, which are home to an abundance of plant and wildlife. 
+For instance, @miller1972bioclimate developed a model for the vertical profiles of transpiration, respiration, and primary production of forest canopies over time, and in @mariscal2004light, they sought to understand the vertical profile distribution of light production in old-growth forests.
+Though many of these previous studies have verified that there is substantial variation within ecosystems, they did so using small collections of data loggers and remote sensing, which failed to provide a detailed picture of the intricate environmental dynamics.
+
+To overcome the limitations of previous technologies, @tolle2005macroscope developed a wireless sensor network, or "macroscope," allowing for dense spatiotemporal monitoring of large physical volumes. 
+In particular, @tolle2005macroscope applied their novel technology to monitor the microclimate of a 70-meter tall coastal redwood canopy. 
+The immense redwood tree is known to exhibit substantial spatiotemporal dynamics, as the treetop typically experiences drastic variations in light, temperature, and humidity while the base is shielded from these elements by the foliage and canopy. 
+In this report, we build upon the work of @tolle2005macroscope and analyze the dense spatiotemporal data collected from the macroscope, with the specific goal of characterizing the spatiotemporal microclimate of the coastal redwood tree over the course of a typical day.
+By examining the daily microclimate of the redwood tree, we shed light on the necessary ecological conditions for the redwood tree to thrive and more importantly, the thousands of plant and animal species in the redwood's surrounding ecosystem.
+
+
 # Data Overview and Collection
 
-```{r load-data}
+```{r}
 # load dates data
 dates_orig <- load_dates_data(DATA_PATH)
 
@@ -41,9 +80,26 @@ redwood_net_orig <- load_redwood_data(DATA_PATH, source = "net")
 redwood_log_orig <- load_redwood_data(DATA_PATH, source = "log")
 ```
 
+As mentioned previously, the macroscope from @tolle2005macroscope offers the most detailed data-driven look into the spatial and temporal dynamics of the coastal redwood tree, compared to alternative technologies. 
+This macroscope monitored a redwood tree ini Sonoma, California for 44 days, from April 27, 2004 at 5:10pm to June 10, 2004 at 2pm, with measurements being taken every 5 minutes (i.e., epoch) in time and approximately every 2 meters in space. 
+A total of 33 motes were deployed into the redwood tree, spaced approximately 2 meters apart with most placed 0.1-1.0m from the trunk facing west or southwest (though there are exceptions to this placement rule). 
+
+Each mote recorded data from four different sensors, measuring temperature, humidity, incident photosynthetically active solar radiation (PAR), and reflected PAR. 
+These four measured parameters were specifically chosen for biological reasons. 
+Temperature and humidity are known to play key roles in cellular transpiration for redwood trees.
+Incident (direct) PAR measures the energy available for photosynthesis, and reflected (ambient) PAR allows for future validation of satellite remote sensing readings of land surface reflectance. 
+Since both transpiration and photosynthesis are significant drivers of ecological cycles, the potential to analyze these four parameters jointly using data from the macroscope seems promising and may offer a more wholistic perspective of the larger ecosystem.
+
+This data was collected via a wireless sensor network system, which transmitted the data from the motes to a central database running on a gateway. 
+However, due to the possibility of network failure, a backup was stored on a local data logging system. 
+Though @tolle2005macroscope ran two calibration procedures to test the wireless system before beginning the study, there were still anomalies in the measured sensor data, indicating technical difficulties with the sensor wireless network which may have led to data loss or corruption from various motes.
+In addition to this technical issue, the data was also primarily collected on one redwood tree, with limited placements of the sensor motes due to possibly harsh environmental conditions. 
+This may limit the generalizability of our findings to other redwood trees, and especially to those redwoods outside of Sonoma, California.
+
+
 # Data Cleaning
 
-```{r clean-data}
+```{r}
 # load dates data
 dates_df <- clean_dates_data(dates_orig)
 
@@ -56,4 +112,674 @@ redwood_net_df <- clean_redwood_data(redwood_net_orig)
 redwood_log_df <- clean_redwood_data(redwood_log_orig)
 ```
 
+As a result of the data collection process, the macroscope sensor data was stored in two different places --- some on the local data logging system and and some on the network. 
+Examining each data source separately, we removed observations with NA measurements and duplicate observations, measured at the same time stamp.
+Note that we freely removed NAs since an NA in one sensor variable reading corresponded to an NA in all sensor variable readings.
+
+::: {.callout-note title="See more" collapse="true"}
+
+There are some NAs in the redwood data. Are they all from the same rows? Let's check that yes, they are from the same rows.
+
+```{r}
+#| results: hold
+# check for NAs in redwood data
+redwood_ls <- list(
+  all = redwood_all_orig,
+  net = redwood_net_orig,
+  log = redwood_log_orig
+)
+for (redwood_source in names(redwood_ls)) {
+  cat(sprintf("NAs in %s data:\n", redwood_source))
+  na_idx <- apply(redwood_ls[[redwood_source]], 1, function(x) any(is.na(x)))
+  redwood_ls[[redwood_source]][na_idx, ] |> 
+    dplyr::select(humidity, humid_temp, hamatop, hamabot) |> 
+    dplyr::summarise(
+      n_rows_with_na = dplyr::n(),
+      dplyr::across(
+        tidyselect::everything(),
+        ~ sum(is.na(.x)),
+        .names = "{col}_na_count"
+      )
+    ) |> 
+    print()
+}
+```
+
+:::
+
+```{r}
+merged_df <- merge_redwood_data(
+  dates_data = dates_df, 
+  motes_data = motes_df, 
+  redwood_net_data = redwood_net_df, 
+  redwood_log_data = redwood_log_df
+)
+```
+
+To provide a comprehensive analysis of this data, we then merged the the data from the local data logging system and from the network alongside the available mote location and time-to-epoch data. (Note that the recorded time in the log data was incorrect, so we used the time-to-epoch data to map these logged observations to the correct the timepoint.)
+
+::: {.callout-note title="See more" collapse="true"}
+
+Here, we show that the `result_time` values in the log data are all the same and incorrect.
+
+```{r}
+redwood_log_df |> 
+  dplyr::pull(result_time) |> 
+  unique()
+```
+
+:::
+
+Often, both the local log and the network had a copy of the same observation as the system was designed to do. 
+We hence removed duplicates, keeping only one copy of each observation.
+
+Other issues in the data include:
+
+- There were instances where there were multiple distinct observations for a single epoch-mote pairing.
+According to the experimental design, there should only be one observation for each epoch-mote pairing, but in practice, the sensor sometimes took several measurements within the five minute window. 
+After looking into these occurrences, we decided to not remove the extraneous observations for two reasons: (1) there were not that many and (2) the observations tended to be similar regardless.
+
+::: {.callout-note title="See more" collapse="true"}
+
+For each epoch and mote combination, we should only have one observation, but in reality, there are sometimes multiple observations. Further investigation reveals that the observations are similar, so we decided to keep all observations.
+
+```{r}
+#| results: hold
+cat("Frequency Table: Number of Observations per Epoch-Mote Pairing")
+merged_df |> 
+  dplyr::group_by(epoch, nodeid) |> 
+  dplyr::summarise(n = dplyr::n()) |> 
+  dplyr::arrange(-n) |> 
+  dplyr::pull(n) |> 
+  table()
+```
+
+:::
+
+- There appear to be two trees ("edge" and "interior") in the data although @tolle2005macroscope never explicitly mentioned this in their manuscript. We suspect that the tree at the edge of the forest was part of a pilot (or test) study since all of the observations from this tree were taken within the first two weeks of the data collection. We thus decided to keep only the observations from the "interior" tree.
+
+::: {.callout-note title="See more" collapse="true"}
+
+Note that when keeping only the "interior" tree observations, some of the extreme outliers are filtered out of the data.
+
+```{r}
+plt <- merged_df |> 
+  tidyr::pivot_longer(
+    cols = c(humidity, temp, iPAR, rPAR),
+    names_to = "variable",
+    values_to = "value"
+  ) |>
+  ggplot2::ggplot() +
+  ggplot2::aes(x = datetime, y = value, color = Tree) +
+  ggplot2::geom_point(size = 0.1) +
+  ggplot2::facet_grid(
+    variable ~ ., 
+    scales = "free_y", 
+    labeller = ggplot2::as_labeller(var_labeller)
+  ) +
+  ggplot2::labs(
+    x = "Date", y = "Measured Value"
+  ) +
+  ggplot2::guides(
+    color = ggplot2::guide_legend(override.aes = list(size = 2))
+  ) +
+  vthemes::theme_vmodern()
+plt
+```
+
+:::
+
+- There are some motes without location and height information. We decided to omit these data points from our analysis as well since we are most interested in characterizing the spatiotemporal dynamics of the redwood tree.
+
+::: {.callout-note title="See more" collapse="true"}
+
+Let's take a look at the number of observations that are missing the mote height information (because its mote ID did not have a match in the mote information dataset).
+
+```{r}
+merged_df |> 
+  dplyr::filter(is.na(Height)) |> 
+  nrow()
+```
+
+:::
+
+- Some incident PAR measurements are higher than the reflected PAR measurements. It is unlikely that the direct sunlight is greater than the reflected light received (and as hinted at in the variable key description). We believe that these measurements are erroneous and removed them from the data.
+
+::: {.callout-note title="See more" collapse="true"}
+
+Let's take a look at the relationship between the incident and reflected PAR measurements. Any measurement above the dashed red line in the figure below is an observation in which the reflected PAR is greater than the incident PAR. There are 5225 such observations.
+
+```{r}
+plt <- merged_df |> 
+  # remove very large outliers for more useful visualization
+  dplyr::filter(rPAR <= 30000) |>
+  ggplot2::ggplot() +
+  ggplot2::aes(x = iPAR, y = rPAR) +
+  ggplot2::geom_point(size = 0.1) +
+  ggplot2::geom_abline(
+    slope = 1, intercept = 0, color = "red", linetype = "dashed", linewidth = 1
+  ) +
+  ggplot2::labs(
+    x = "Incident PAR (µmol/m²/s)", y = "Reflected PAR (µmol/m²/s)"
+  ) +
+  vthemes::theme_vmodern()
+plt
+```
+
+We further visualized the "bad" PAR measurements in the time series plot below. They mostly correspond to measurements with very low incident PAR values. While it appears that we could keep the temperature and humidity measurements taken for these observations, we decided to remove the entire observation for simplicity. In future work, it could be interesting to repeat the subsequent analysis when keeping these humidity and temperature measurements to see if the results change significantly. However, since there are relatively few observations --- only 5225 such observations (out of more than 310,000) to be exact --- we do not believe that this will significantly impact our results.
+
+```{r}
+plt <- merged_df |> 
+  dplyr::filter(Tree == "interior") |> 
+  dplyr::mutate(
+    `rPAR > iPAR` = factor(
+      ifelse(rPAR > iPAR, "Yes", "No"), levels = c("Yes", "No")
+    )
+  ) |> 
+  tidyr::pivot_longer(
+    cols = c(humidity, temp, iPAR, rPAR),
+    names_to = "variable",
+    values_to = "value"
+  ) |>
+  dplyr::arrange(dplyr::desc(`rPAR > iPAR`)) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = datetime, y = value, color = `rPAR > iPAR`) +
+  ggplot2::geom_point(size = 0.1) +
+  ggplot2::facet_grid(
+    variable ~ ., 
+    scales = "free_y", 
+    labeller = ggplot2::as_labeller(var_labeller)
+  ) +
+  ggplot2::labs(
+    x = "Date", y = "Measured Value"
+  ) +
+  ggplot2::guides(
+    color = ggplot2::guide_legend(override.aes = list(size = 2))
+  ) +
+  vthemes::theme_vmodern()
+plt
+```
+
+
+:::
+
+- The voltages from the logged data and the network data appear to be on two different scales. We suspect that they were measured using different units. When looking at the observations with copies on both the network and the log, we found that there was an almost perfect one-to-one relationship between the voltages from the network and the log data. We thus decided to convert the voltages from the log data to the same scale as the network data. More details below.
+
+::: {.callout-note title="See more" collapse="true"}
+
+To examine the relationship between the voltages from the logged and network data, we zoom into the observations that had copies on both the network and the log and plot the voltage in the log data versus the voltage in the network data below. With the exception of a few voltages, there is an almost perfect one-to-one relationship between the voltages from the network and the log data. When we fit a linear model to the data, we find that the goodness of fit is very high (adjusted $R^2 \approx$ 0.99). Since there seems to be a slight curve in the relationship, we also tried fitting a linear model after taking the inverse of the network voltage. The goodness of fit is slightly higher (adjusted $R^2 \approx$ 1.00) for this model. Since this second fit is slightly better, we decided to use this model to convert the voltages from the network data to the same scale as the log data (see `clean_merged_data()`).
+
+```{r}
+#| results: hold
+voltage_df <- dplyr::inner_join(
+  redwood_log_df,
+  redwood_net_df,
+  by = c("epoch", "nodeid")
+)
+plt <- voltage_df |> 
+  # to remove very large outlier
+  dplyr::filter(voltage.x > 2) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = voltage.x, y = voltage.y) +
+  ggplot2::labs(
+    x = "Voltage (log)", y = "Voltage (network)"
+  ) +
+  ggplot2::geom_point() +
+  vthemes::theme_vmodern()
+plt
+
+# linear fit: voltage.x = intercept + beta * voltage.y
+cat("===========================================================\nLinear fit: voltage_log = intercept + beta * voltage_net")
+voltage_fit <- lm(voltage.x ~ voltage.y, data = voltage_df)
+summary(voltage_fit)
+
+# linear fit with inverse transform: voltage.x = intercept + beta * 1/voltage.y
+cat("===========================================================\nLinear fit with inverse transform: voltage_log = intercept + beta * 1/voltage_net")
+voltage_df <- voltage_df |> 
+  dplyr::mutate(voltage.y.inv = 1 / voltage.y)
+
+voltage_fit <- lm(voltage.x ~ voltage.y.inv, data = voltage_df)
+summary(voltage_fit)
+```
+
+:::
+
+@fig-data_by_source shows the remaining sensor measurements after preprocessing the data according to the steps above.
+
+```{r}
+#| fig-cap: "Sensor measurements from motes placed on the interior tree over time. There are clearly erroneous measurements in the log data (e.g., negative temperatures and humidities) as well as anomalies in the network data (e.g., impossibly large changes in temperature and humidity within the span of 5 minutes)."
+#| label: "fig-data_by_source"
+
+merged_df <- clean_merged_data(merged_df)
+plt <- merged_df |> 
+  tidyr::pivot_longer(
+    cols = c(humidity, temp, iPAR, rPAR),
+    names_to = "variable",
+    values_to = "value"
+  ) |>
+  dplyr::mutate(
+    source = dplyr::case_when(
+      source == "log" ~ "Log",
+      source == "net" ~ "Network"
+    )
+  ) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = datetime, y = value, color = source) +
+  ggplot2::geom_point(size = 0.01) +
+  ggplot2::facet_grid(
+    variable ~ ., 
+    scales = "free_y", 
+    labeller = ggplot2::as_labeller(var_labeller)
+  ) +
+  ggplot2::labs(
+    x = "Date", y = "Measured Value", color = "Source"
+  ) +
+  ggplot2::guides(
+    color = ggplot2::guide_legend(override.aes = list(size = 2))
+  ) +
+  vthemes::theme_vmodern()
+plt
+```
+
+Since it's highly improbable that the temperature (in Celsius) and humidity in California are negative, we removed all sensor measurements with negative temperatures and humidities. 
+
+::: {.callout-note title="See more" collapse="true"}
+
+After removing the negative temperatures and humidities, we are left with the following. This step appears to also remove some strange incident PAR measurements.
+
+```{r}
+plt <- merged_df |> 
+  dplyr::filter(
+    temp > 0
+  ) |>
+  tidyr::pivot_longer(
+    cols = c(humidity, temp, iPAR, rPAR),
+    names_to = "variable",
+    values_to = "value"
+  ) |>
+  dplyr::mutate(
+    source = dplyr::case_when(
+      source == "log" ~ "Log",
+      source == "net" ~ "Network"
+    )
+  ) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = datetime, y = value, color = source) +
+  ggplot2::geom_point(size = 0.01) +
+  ggplot2::facet_grid(
+    variable ~ ., 
+    scales = "free_y", 
+    labeller = ggplot2::as_labeller(var_labeller)
+  ) +
+  ggplot2::labs(
+    x = "Date", y = "Measured Value", color = "Source"
+  ) +
+  ggplot2::guides(
+    color = ggplot2::guide_legend(override.aes = list(size = 2))
+  ) +
+  vthemes::theme_vmodern()
+plt
+```
+
+:::
+
+Furthermore, when examining anomalies in the network data, we found that battery failure, indicated by a voltage drop below a certain threshold, was a common issue and may have led to measurement errors. 
+
+::: {.callout-note title="See more" collapse="true"}
+
+Here, we plot the sensor measurements from the network data and color each point by the voltage (after converting it into the same units as the log data).
+
+```{r}
+plt <- merged_df |> 
+  dplyr::filter(
+    source == "net",
+  ) |>
+  tidyr::pivot_longer(
+    cols = c(humidity, temp, iPAR, rPAR),
+    names_to = "variable",
+    values_to = "value"
+  ) |>
+  # sort so that lower voltages are plotted last (or on top of the plot))
+  dplyr::arrange(-voltage) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = datetime, y = value, color = voltage) +
+  ggplot2::geom_point(size = 0.01) +
+  ggplot2::facet_grid(
+    variable ~ ., 
+    scales = "free_y", 
+    labeller = ggplot2::as_labeller(var_labeller)
+  ) +
+  ggplot2::labs(
+    x = "Date", y = "Measured Value", color = "Voltage"
+  ) +
+  ggplot2::scale_color_viridis_c(
+    option = "plasma", end = 0.85
+  ) +
+  vthemes::theme_vmodern()
+plt
+```
+
+:::
+
+@tolle2005macroscope noted a similar observation, saying "Once the battery voltage falls from a maximum of 3 volts to a minimum of about 2.4 volts, a node’s temperature reading begins to rise far out of the normal range... we removed all readings that were taken when the node's voltage was higher than 3 volts or lower than 2.4 volts."
+Though there are many possible choices for how to remedy the potential battery failure observations, we chose to follow the same approach as @tolle2005macroscope and removed all observations (in either the log or network data) with a voltage below 2.4 volts or above 3 volts. 
+This filter removes 10% of the data but seems to appropriately remove anomalous sensor measurements as shown by @fig-battery_failure.
+
+```{r}
+#| column: page
+#| fig-width: 14
+#| fig-height: 6
+#| fig-cap: "Sensor measurements over time, colored by (A) the battery voltage and (B) whether or not the battery has 'failed' (i.e., the battery voltage has fallen outside of the normal 2.4V-3V range). In general, battery failure corresponds to sensor measurements with drifting temperatures and humidities and particularly low PAR values."
+#| label: "fig-battery_failure"
+plt1 <- merged_df |> 
+  tidyr::pivot_longer(
+    cols = c(humidity, temp, iPAR, rPAR),
+    names_to = "variable",
+    values_to = "value"
+  ) |>
+  # sort so that lower voltages are plotted last (or on top of the plot))
+  dplyr::arrange(-voltage) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = datetime, y = value, color = voltage) +
+  ggplot2::geom_point(size = 0.01) +
+  ggplot2::facet_grid(
+    variable ~ ., 
+    scales = "free_y", 
+    labeller = ggplot2::as_labeller(var_labeller)
+  ) +
+  ggplot2::labs(
+    x = "Date", y = "Measured Value", color = "Voltage"
+  ) +
+  ggplot2::scale_color_viridis_c(
+    option = "plasma", end = 0.85
+  ) +
+  vthemes::theme_vmodern()
+
+plt2 <- merged_df |> 
+  tidyr::pivot_longer(
+    cols = c(humidity, temp, iPAR, rPAR),
+    names_to = "variable",
+    values_to = "value"
+  ) |>
+  dplyr::mutate(
+    battery_failure = factor(
+      ifelse(voltage < 2.4, "Yes", "No"),
+      levels = c("Yes", "No")
+    )
+  ) |> 
+  # sort so that lower voltages are plotted last (or on top of the plot)
+  dplyr::arrange(
+    dplyr::desc(battery_failure)
+  ) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(x = datetime, y = value, color = battery_failure) +
+  ggplot2::geom_point(size = 0.01) +
+  ggplot2::facet_grid(
+    variable ~ ., 
+    scales = "free_y", 
+    labeller = ggplot2::as_labeller(var_labeller)
+  ) +
+  ggplot2::scale_color_manual(
+    values = c("Yes" = "#a43939", "No" = "gray")
+  ) +
+  ggplot2::labs(
+    x = "Date", y = "Measured Value", color = "Battery\nFailure"
+  ) +
+  ggplot2::guides(
+    color = ggplot2::guide_legend(override.aes = list(size = 2))
+  ) +
+  vthemes::theme_vmodern()
+
+plt <- patchwork::wrap_plots(
+  plt1, plt2, ncol = 2, guides = "collect"
+) +
+  patchwork::plot_layout(axes = "collect")
+plt
+```
+
+```{r}
+# remove battery failure points
+redwood_df <- remove_battery_failure(merged_df)
+```
+
+
 # Exploratory Data Analysis
+
+Having cleaned the data, we focus now on our original goal of characterizing the spatiotemporal microclimate of the coastal redwood tree over the course of a typical day.
+
+To this end, we first visualize the average temperature, humidity, and incident and reflected PAR, measured over the course of the day in @fig-average. More specifically, for each measured variable, we computed the average over all measurements taken during that 15-minute interval across all motes and across the study duration for the interior redwood tree. @fig-average highlights the vast differences in the life of a redwood during the daytime versus nighttime. Here, we define nighttime as the time between sunset and sunrise, or approximately 8pm to 6am during the time of year of the study. During the nighttime, the redwood experiences relatively stable and low temperatures, higher humidity levels, and essentially no incident or reflected PAR (which is to be expected). In contrast, during the day, the redwood experiences rising temperatures, falling humidity levels, and highly-active (non-zero) PAR levels.
+
+```{r}
+#| fig-width: 10
+#| fig-height: 6
+#| fig-cap: "Average temperature, humidity, and incident and reflected PAR measurements per 15 min interval over the course of the day for a coastal redwood tree. The shaded region represents nighttime (i.e., the time between sunset to sunrise). Most of the activity in the sensor measurements occurs during the day, with temperatures rising, humidity falling, and PAR levels activating."
+#| label: "fig-average"
+
+time_of_day_df <- tibble::tibble(
+  start_night = c(
+    as.POSIXct(strptime("00:00:00", format="%H:%M:%S")),
+    as.POSIXct(strptime("20:00:00", format="%H:%M:%S"))
+  ),
+  end_night = c(
+    as.POSIXct(strptime("06:00:00", format="%H:%M:%S")),
+    as.POSIXct(strptime("24:00:00", format="%H:%M:%S"))
+  )
+)
+plt <- redwood_df |> 
+  tidyr::pivot_longer(
+    cols = c(humidity, temp, iPAR, rPAR),
+    names_to = "variable",
+    values_to = "value"
+  ) |> 
+  dplyr::group_by(
+    time_chr, variable
+  ) |> 
+  dplyr::summarise(
+    mean = mean(value, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  dplyr::mutate(
+    variable = factor(variable, levels = c("temp", "humidity", "iPAR", "rPAR")),
+    time_chr = as.POSIXct(strptime(time_chr, format="%H:%M:%S"))
+  ) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(
+    x = time_chr, 
+    y = mean
+  ) +
+  ggplot2::facet_grid(
+    variable ~ ., 
+    scales = "free_y", 
+    labeller = ggplot2::as_labeller(var_labeller), 
+    switch = "y"
+  ) +
+  ggplot2::geom_rect(
+    ggplot2::aes(xmin = start_night, xmax = end_night, ymin = -Inf, ymax = Inf),
+    data = time_of_day_df,
+    fill = "grey95", color = NA, inherit.aes = FALSE
+  ) +
+  ggplot2::geom_line() +
+  ggplot2::labs(
+    x = "Time", y = "Measured Value"
+  ) +
+  ggplot2::scale_x_datetime(
+    breaks = scales::breaks_width("1 hour"),
+    labels = scales::label_time("%H:%M", tz = "EST"),
+    expand = c(0, 0)
+  ) +
+  custom_ggplot_theme
+plt
+```
+
+Moving beyond this global depiction of the redwood tree's microclimate, we next investigate the spatiotemporal variation in the sensor measurements. In particular, @fig-variation(A) shows the daily variation in average temperature, humidity, and PAR levels at different heights of the redwood tree. Note here that we only included observations from motes facing southwest (the direction with the most nodes) in order to disentangle the effects of height and direction. Unsurprisingly, higher regions of the redwood tree experience higher temperatures, lower humidity levels, and higher levels of both incident and reflected PAR.
+
+Similarly, @fig-variation(B) compares the average temperature, humidity, and PAR levels between two motes, located at a similar height (55-56m) but facing two different directions (i.e., northwest and northeast). We can clearly see the effect of the sun's movement on the redwood tree, with the northwest-facing mote revealing higher temperatures, lower humidity levels, and higher PAR levels in the evening while the northeast-facing mote shows the opposite trend. 
+
+```{r}
+#| column: page
+#| fig-width: 14
+#| fig-height: 6
+#| fig-cap: "Daily variation in temperature, humidity, and incident and reflected PAR across (A) different heights and (B) different directions of a coastal redwood tree. Higher regions experience higher temperatures, lower humidity levels, and higher PAR. Similarly, different sides (or directions) of the redwood tree can experience different microclimates at any point in time."
+#| label: "fig-variation"
+
+mote_avgs_df <- redwood_df |> 
+  tidyr::pivot_longer(
+    cols = c(humidity, temp, iPAR, rPAR),
+    names_to = "variable",
+    values_to = "value"
+  ) |> 
+  dplyr::mutate(
+    time_chr = cut(
+      as.POSIXct(strptime(time_chr, format="%H:%M:%S")), breaks = "15 min"
+    )
+  ) |>
+  dplyr::group_by(
+    time_chr, nodeid, Height, Direc, variable
+  ) |> 
+  dplyr::summarise(
+    mean = mean(value, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  dplyr::mutate(
+    variable = factor(variable, levels = c("temp", "humidity", "iPAR", "rPAR")),
+    time_chr = as.POSIXct(
+      strptime(as.character(time_chr), format="%Y-%m-%d %H:%M:%S")
+    )
+  )
+
+plt1 <- mote_avgs_df |> 
+  dplyr::filter(
+    Direc == "SW",
+    variable %in% c("temp", "humidity")
+  ) |>
+  dplyr::arrange(
+    dplyr::desc(Height)
+  ) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(
+    x = time_chr, 
+    y = mean,
+    color = Height,
+    group = as.factor(rev(Height))
+  ) +
+  ggplot2::geom_line(linewidth = 0.75) +
+  ggplot2::labs(
+    title = "(A) Variation across height"
+  )
+
+plt2 <- mote_avgs_df |> 
+  dplyr::filter(
+    Direc == "SW",
+    variable %in% c("iPAR", "rPAR")
+  ) |>
+  dplyr::arrange(
+    dplyr::desc(Height)
+  ) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(
+    x = time_chr, 
+    y = mean,
+    color = Height,
+    group = as.factor(rev(Height))
+  ) +
+  ggplot2::geom_point(size = 0.5)
+
+plt3 <- mote_avgs_df |> 
+  dplyr::filter(
+    Direc %in% c("NW", "NE"),
+    Height >= 54, 
+    Height <= 55,
+    variable %in% c("temp", "humidity")
+  ) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(
+    x = time_chr, 
+    y = mean,
+    color = Direc
+  ) +
+  ggplot2::geom_line(linewidth = 0.75) +
+  ggplot2::labs(
+    title = "(B) Variation across direction"
+  )
+
+plt4 <- mote_avgs_df |> 
+  dplyr::filter(
+    Direc %in% c("NW", "NE"),
+    Height >= 54, 
+    Height <= 55,
+    variable %in% c("iPAR", "rPAR")
+  ) |> 
+  ggplot2::ggplot() +
+  ggplot2::aes(
+    x = time_chr, 
+    y = mean,
+    color = Direc
+  ) +
+  ggplot2::geom_point(size = 0.5) +
+  ggplot2::guides(color = "none")
+
+height_plt <- patchwork::wrap_plots(
+  plt1, plt2, ncol = 1, guides = "collect"
+) +
+  patchwork::plot_layout(axes = "collect") &
+  ggplot2::facet_grid(
+    variable ~ ., 
+    scales = "free_y", 
+    labeller = ggplot2::as_labeller(var_labeller),
+    switch = "y"
+  ) &
+  ggplot2::scale_color_viridis_c(
+    option = "magma", end = 0.95
+  ) &
+  ggplot2::labs(
+    x = "Time", color = "Height (m)"
+  ) &
+  ggplot2::scale_x_datetime(
+    breaks = scales::breaks_width("1 hour"), 
+    labels = scales::label_date("%H:%M", tz = "EST"), 
+    expand = c(0, 0)
+  ) &
+  custom_ggplot_theme
+
+direc_plt <- patchwork::wrap_plots(
+  plt3, plt4, ncol = 1, guides = "collect"
+) +
+  patchwork::plot_layout(axes = "collect") &
+  ggplot2::facet_grid(
+    variable ~ ., 
+    scales = "free_y", 
+    labeller = ggplot2::as_labeller(var_labeller),
+    switch = "y"
+  ) &
+  ggplot2::labs(
+    x = "Time", color = "Direction"
+  ) &
+  ggplot2::scale_x_datetime(
+    breaks = scales::breaks_width("1 hour"), 
+    labels = scales::label_date("%H:%M", tz = "EST"), 
+    expand = c(0, 0)
+  ) &
+  ggplot2::scale_color_manual(
+    values = c("#97D2FB", "#F98C77")
+  ) &
+  custom_ggplot_theme
+
+plt <- patchwork::wrap_plots(
+  height_plt, direc_plt, nrow = 1
+)
+plt
+```
+
+
+# Discussion
+
+At any point in time, redwood trees can experience very rich microclimates with dynamic spatiotemporal patterns, as showcased by our analysis. 
+The granularity of our analysis is made possible by the macroscope technology developed by @tolle2005macroscope. 
+However, this analysis is not without limitations.
+Given the complicated data cleaning, there are inevitably many alternative but equally-reasonable choices that could have been made. 
+For instance, a different voltage threshold or a different approach altogher could have been used to identify motes that suffered from battery failure. 
+It is possible that these different data cleaning choices could affect downstream analyses. 
+Furthermore, the placement of the motes primarily on the southwestern side of the tree made it challenging to examine the effects of the mote direction.
+Still, the data collected by the macroscope offers a unique and detailed look into the microclimate of the redwood tree, which is crucial for better understanding the ecological conditions experienced by redwood trees and the thousands of plant and animal species in the redwood's surrounding ecosystem.
+
+# References
